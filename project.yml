@@ -1,0 +1,54 @@
+# XcodeGen spec. On a Mac:
+#   brew install xcodegen
+#   cd DriveClaim && xcodegen generate && open DriveClaim.xcodeproj
+# This creates the full project with files, packages, Info.plist and
+# capabilities already wired, so you don't configure the target by hand.
+name: DriveClaim
+options:
+  bundleIdPrefix: com.yourcompany
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+packages:
+  TerritoryCore:
+    path: Core
+  GoogleMaps:
+    url: https://github.com/googlemaps/ios-maps-sdk
+    majorVersion: 9.0.0
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    majorVersion: 11.0.0
+
+targets:
+  DriveClaim:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+    dependencies:
+      - package: TerritoryCore
+        product: TerritoryCore
+      - package: GoogleMaps
+        product: GoogleMaps
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseFirestore
+      - package: Firebase
+        product: FirebaseFunctions
+      - package: Firebase
+        product: FirebaseCore
+    settings:
+      base:
+        INFOPLIST_FILE: App/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.yourcompany.driveclaim
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1"
+    # Background location + audio so drives keep tracking with the screen off.
+    entitlements:
+      path: App/DriveClaim.entitlements
+      properties: {}

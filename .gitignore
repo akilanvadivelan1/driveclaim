@@ -1,0 +1,5 @@
+node_modules/
+.build/
+*.xcodeproj
+.DS_Store
+GoogleService-Info.plist

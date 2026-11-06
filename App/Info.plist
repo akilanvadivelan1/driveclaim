@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>DriveClaim</string>
+	<key>CFBundleDisplayName</key>
+	<string>DriveClaim</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UILaunchScreen</key>
+	<dict/>
+
+	<!-- PASTE your Google Maps SDK for iOS key here. -->
+	<key>GMSApiKey</key>
+	<string>PASTE_YOUR_GOOGLE_MAPS_IOS_KEY_HERE</string>
+
+	<!-- Location: foreground draws your route, background keeps tracking the drive. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Used to draw your route and measure the land you claim.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Keeps tracking your drive when the screen is off so you don't lose a loop.</string>
+
+	<!-- Keep GPS and voice running while driving with the screen off. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>audio</string>
+	</array>
+
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+</dict>
+</plist>
