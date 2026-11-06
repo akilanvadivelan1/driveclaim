@@ -27,9 +27,9 @@ struct LeaderboardView: View {
                 if loading {
                     ProgressView("Loading...").frame(maxHeight: .infinity)
                 } else if let error {
-                    ContentUnavailableView("Could not load", systemImage: "wifi.slash", description: Text(error))
+                    emptyState(icon: "wifi.slash", title: "Could not load", detail: error)
                 } else if rows.isEmpty {
-                    ContentUnavailableView("No claims yet", systemImage: "map", description: Text("Be the first to claim land here."))
+                    emptyState(icon: "map", title: "No claims yet", detail: "Be the first to claim land here.")
                 } else {
                     List(rows) { row in
                         HStack {
@@ -49,6 +49,17 @@ struct LeaderboardView: View {
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .task(id: scope) { await load() }
         }
+    }
+
+    // Works on iOS 16 (ContentUnavailableView needs iOS 17).
+    private func emptyState(icon: String, title: String, detail: String) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon).font(.largeTitle).foregroundColor(.secondary)
+            Text(title).font(.headline)
+            Text(detail).font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
+        }
+        .padding()
+        .frame(maxHeight: .infinity)
     }
 
     private func load() async {

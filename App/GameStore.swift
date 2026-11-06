@@ -47,6 +47,7 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
         Task { await submit() }
     }
 
+    @MainActor
     private func submit() async {
         guard recorded.count >= 4 else { say("Not enough of a drive to claim anything."); return }
         submitting = true
