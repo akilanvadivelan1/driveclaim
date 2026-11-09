@@ -3,7 +3,7 @@ import MapKit
 import TerritoryCore
 
 /// Apple Maps (MapKit). No API key or billing account needed.
-/// Your land is green, rivals are red, and your live trail is blue.
+/// Your land is violet, rivals are pink, and your live trail is white.
 struct MapView: UIViewRepresentable {
     @EnvironmentObject var game: GameStore
     @EnvironmentObject var firebase: FirebaseService
@@ -16,6 +16,9 @@ struct MapView: UIViewRepresentable {
         map.showsUserLocation = true
         map.showsCompass = true
         map.pointOfInterestFilter = .excludingAll
+        map.overrideUserInterfaceStyle = .dark                      // dark map
+        map.preferredConfiguration = MKStandardMapConfiguration(
+            elevationStyle: .flat, emphasisStyle: .muted)           // calm, low-contrast roads
         // Start zoomed out over the continental U.S.
         map.setRegion(
             MKCoordinateRegion(
@@ -56,7 +59,7 @@ struct MapView: UIViewRepresentable {
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
             if let poly = overlay as? MKPolygon {
                 let r = MKPolygonRenderer(polygon: poly)
-                let color: UIColor = poly.title == "mine" ? .systemGreen : .systemRed
+                let color: UIColor = poly.title == "mine" ? Theme.mineUI : Theme.rivalUI
                 r.fillColor = color.withAlphaComponent(0.30)
                 r.strokeColor = color
                 r.lineWidth = 2
@@ -64,7 +67,7 @@ struct MapView: UIViewRepresentable {
             }
             if let line = overlay as? MKPolyline {
                 let r = MKPolylineRenderer(polyline: line)
-                r.strokeColor = .systemBlue
+                r.strokeColor = .white
                 r.lineWidth = 5
                 return r
             }
