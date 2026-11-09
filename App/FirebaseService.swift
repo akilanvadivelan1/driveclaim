@@ -12,7 +12,14 @@ final class FirebaseService: ObservableObject {
     @Published var uid: String?
 
     private lazy var functions = Functions.functions()
-    private let db = Firestore.firestore()
+    private lazy var db = Firestore.firestore()
+
+    /// False until GoogleService-Info.plist is added. The UI still runs without it.
+    var isConfigured: Bool { FirebaseApp.app() != nil }
+
+    struct NotConfigured: LocalizedError {
+        var errorDescription: String? { "Firebase is not set up yet. Add GoogleService-Info.plist." }
+    }
     private var claimsListener: ListenerRegistration?
     private var scoreListener: ListenerRegistration?
 
@@ -34,6 +41,7 @@ final class FirebaseService: ObservableObject {
 
     /// Anonymous auth is enough to get a stable player id without a login screen.
     func signInIfNeeded() {
+        guard isConfigured else { return }
         if let user = Auth.auth().currentUser { uid = user.uid; startListening(); return }
         Auth.auth().signInAnonymously { [weak self] result, _ in
             self?.uid = result?.user.uid
@@ -62,6 +70,7 @@ final class FirebaseService: ObservableObject {
 
     /// Send a finished drive to the server. Returns (claimed, stolen) square miles.
     func submitDrive(_ trail: [TimedCoord]) async throws -> (claimed: Double, stolen: Double) {
+        guard isConfigured else { throw NotConfigured() }
         let payload: [String: Any] = [
             "trail": trail.map { ["lat": $0.coord.lat, "lon": $0.coord.lon, "t": $0.millis] }
         ]
@@ -73,6 +82,7 @@ final class FirebaseService: ObservableObject {
     /// Fetch a leaderboard. Pass a state code (e.g. "CA") for the state board,
     /// or nil for the national board.
     func leaderboard(state: String?) async throws -> [LeaderboardRow] {
+        guard isConfigured else { throw NotConfigured() }
         var payload: [String: Any] = ["scope": state == nil ? "national" : "state", "limit": 50]
         if let state { payload["state"] = state }
         let res = try await functions.httpsCallable("leaderboard").call(payload)

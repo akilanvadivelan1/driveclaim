@@ -9,7 +9,11 @@ struct DriveClaimApp: App {
     @StateObject private var game: GameStore
 
     init() {
-        FirebaseApp.configure()
+        // Only configure Firebase if its config file is present, so the UI can
+        // be previewed in the simulator before the backend is set up.
+        if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
+            FirebaseApp.configure()
+        }
 
         let fb = FirebaseService()
         _firebase = StateObject(wrappedValue: fb)
