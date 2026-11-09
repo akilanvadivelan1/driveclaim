@@ -19,10 +19,6 @@
 	<key>UILaunchScreen</key>
 	<dict/>
 
-	<!-- PASTE your Google Maps SDK for iOS key here. -->
-	<key>GMSApiKey</key>
-	<string>PASTE_YOUR_GOOGLE_MAPS_IOS_KEY_HERE</string>
-
 	<!-- Location: foreground draws your route, background keeps tracking the drive. -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Used to draw your route and measure the land you claim.</string>

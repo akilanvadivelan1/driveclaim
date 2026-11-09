@@ -1,5 +1,4 @@
 import SwiftUI
-import GoogleMaps
 import FirebaseCore
 
 @main
@@ -11,8 +10,6 @@ struct DriveClaimApp: App {
 
     init() {
         FirebaseApp.configure()
-        let key = Bundle.main.object(forInfoDictionaryKey: "GMSApiKey") as? String ?? ""
-        GMSServices.provideAPIKey(key)
 
         let fb = FirebaseService()
         _firebase = StateObject(wrappedValue: fb)

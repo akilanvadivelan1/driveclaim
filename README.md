@@ -18,7 +18,7 @@ Scoring and stealing are server-authoritative. The phone only records the raw GP
 ## Layout
 
 - `Core/` is a Swift package (`TerritoryCore`) with the geometry: area, loop detection, scoring, and the steal math (polygon intersection and subtraction). Pure and unit-tested, with no UI or Firebase.
-- `App/` is the SwiftUI app: GPS recording, the Google Maps view, voice feedback, and the Firebase client.
+- `App/` is the SwiftUI app: GPS recording, the Apple Maps (MapKit) view, voice feedback, and the Firebase client.
 - `Firebase/functions/` is the Cloud Function that owns game logic, using Turf.js for robust polygon operations.
 - `Firebase/firestore.rules` locks down writes to the server.
 
@@ -46,30 +46,29 @@ When your loop overlaps a victim's claim:
 
 The project is set up so you do NOT build the Xcode project by hand. An
 XcodeGen spec (`project.yml`) generates `DriveClaim.xcodeproj` with all files,
-Swift packages (TerritoryCore, Google Maps, Firebase), the Info.plist keys and
-the background capabilities already wired.
+Swift packages (TerritoryCore, Firebase), the Info.plist keys and
+the background capabilities already wired. The map uses Apple Maps (MapKit),
+so there is no map API key to get.
 
 Fastest path:
 
     cd DriveClaim
     bash setup-mac.sh          # installs XcodeGen, runs tests, generates the project
 
-Then, the two things only you can provide (API keys):
+Then:
 
-1. Paste your Google Maps iOS key into `App/Info.plist` (`GMSApiKey`).
-2. Download `GoogleService-Info.plist` from your Firebase project into `App/`,
+1. Download `GoogleService-Info.plist` from your Firebase project into `App/`,
    then re-run `xcodegen generate` so it is included.
-3. `open DriveClaim.xcodeproj`, pick your signing Team, choose a device, Run.
+2. `open DriveClaim.xcodeproj`, pick your signing Team, choose a device, Run.
 
 If you prefer to do it manually in Xcode instead of XcodeGen:
 
 1. Create a new iOS App named DriveClaim (SwiftUI), drag in the `App/` files.
 2. File > Add Package Dependencies > Add Local > `Core/` (TerritoryCore).
-3. Add `https://github.com/googlemaps/ios-maps-sdk`.
-4. Add `https://github.com/firebase/firebase-ios-sdk` with FirebaseAuth,
+3. Add `https://github.com/firebase/firebase-ios-sdk` with FirebaseAuth,
    FirebaseFirestore, FirebaseFunctions, FirebaseCore.
-5. Use the provided `App/Info.plist` (keys and background modes are already in it).
-6. Add `GoogleService-Info.plist` and your `GMSApiKey`.
+4. Use the provided `App/Info.plist` (permissions and background modes are already in it).
+5. Add `GoogleService-Info.plist`.
 
 Note: GPS and background drive-tracking only work on a real iPhone, not the
 iOS Simulator.

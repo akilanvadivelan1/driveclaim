@@ -13,9 +13,6 @@ options:
 packages:
   TerritoryCore:
     path: Core
-  GoogleMaps:
-    url: https://github.com/googlemaps/ios-maps-sdk
-    majorVersion: 9.0.0
   Firebase:
     url: https://github.com/firebase/firebase-ios-sdk
     majorVersion: 11.0.0
@@ -29,8 +26,6 @@ targets:
     dependencies:
       - package: TerritoryCore
         product: TerritoryCore
-      - package: GoogleMaps
-        product: GoogleMaps
       - package: Firebase
         product: FirebaseAuth
       - package: Firebase
