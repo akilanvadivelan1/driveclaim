@@ -80,7 +80,7 @@ struct AuthView: View {
             }
             .pickerStyle(.segmented)
 
-            TextField("Email", text: $email)
+            TextField("", text: $email, prompt: Text("Email").foregroundColor(Theme.textDim))
                 .textContentType(.emailAddress)
                 .keyboardType(.emailAddress)
                 .textInputAutocapitalization(.never)
@@ -88,7 +88,9 @@ struct AuthView: View {
                 .padding(14)
                 .background(Theme.cardLight, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-            SecureField(mode == .create ? "Password (8 or more characters)" : "Password", text: $password)
+            SecureField("", text: $password,
+                        prompt: Text(mode == .create ? "Password (8 or more characters)" : "Password")
+                            .foregroundColor(Theme.textDim))
                 .textContentType(mode == .create ? .newPassword : .password)
                 .padding(14)
                 .background(Theme.cardLight, in: RoundedRectangle(cornerRadius: 14, style: .continuous))

@@ -196,6 +196,10 @@ final class FirebaseService: ObservableObject {
     /// Plain-English messages. Firebase's error codes are fixed numbers, so matching on
     /// them works across SDK versions.
     static func authMessage(_ error: Error) -> String {
+        // Firebase words this error differently from its numeric code, so match the text.
+        if error.localizedDescription.localizedCaseInsensitiveContains("restricted to administrators") {
+            return "Guest sign-in is switched off. Turn on Anonymous in the Firebase console."
+        }
         let ns = error as NSError
         guard ns.domain == "FIRAuthErrorDomain" else { return error.localizedDescription }
         switch ns.code {
