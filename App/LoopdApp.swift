@@ -2,7 +2,7 @@ import SwiftUI
 import FirebaseCore
 
 @main
-struct DriveClaimApp: App {
+struct LoopdApp: App {
     // One FirebaseService, shared with the GameStore so both see the same
     // auth session and live listeners.
     @StateObject private var firebase: FirebaseService

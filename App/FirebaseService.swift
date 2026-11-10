@@ -207,11 +207,11 @@ final class FirebaseService: ObservableObject {
     // MARK: Invite links
 
     /// The link friends tap. It only opens the app if they already have it installed.
-    static func inviteLink(code: String) -> String { "driveclaim://invite/\(code)" }
+    static func inviteLink(code: String) -> String { "loopd://invite/\(code)" }
 
-    /// Handles driveclaim://invite/ABCD2345
+    /// Handles loopd://invite/ABCD2345
     func handle(url: URL) {
-        guard url.scheme == "driveclaim", url.host == "invite" else { return }
+        guard url.scheme == "loopd", url.host == "invite" else { return }
         let code = url.lastPathComponent.uppercased()
         guard code.count >= 6 else { return }
         pendingInvite = PendingInvite(code: code)

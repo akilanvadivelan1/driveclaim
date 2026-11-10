@@ -9,9 +9,9 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleName</key>
-	<string>DriveClaim</string>
+	<string>Loopd</string>
 	<key>CFBundleDisplayName</key>
-	<string>DriveClaim</string>
+	<string>Loopd</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleShortVersionString</key>
@@ -38,15 +38,15 @@
 		<string>audio</string>
 	</array>
 
-	<!-- Lets driveclaim://invite/CODE links open the app. -->
+	<!-- Lets loopd://invite/CODE links open the app. -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.yourcompany.driveclaim</string>
+			<string>com.yourcompany.loopd</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>driveclaim</string>
+				<string>loopd</string>
 			</array>
 		</dict>
 	</array>

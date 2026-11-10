@@ -15,7 +15,7 @@ struct FriendsView: View {
 
     private var shareText: String {
         guard let code = inviteCode else { return "" }
-        return "Join me on DriveClaim and let's see who can claim the most land. "
+        return "Join me on Loopd and let's see who can claim the most land. "
             + "Open this link: \(FirebaseService.inviteLink(code: code)) "
             + "or type the code \(code) under Friends in the app."
     }

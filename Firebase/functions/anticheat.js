@@ -1,5 +1,5 @@
 /**
- * Server-side anti-cheat for DriveClaim.
+ * Server-side anti-cheat for Loopd.
  *
  * Every check runs on the trail the phone uploads, before any land is awarded.
  * A drive must pass all checks. Each returns { ok: false, reason } on failure.

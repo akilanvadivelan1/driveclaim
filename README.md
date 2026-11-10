@@ -1,4 +1,4 @@
-# DriveClaim
+# Loopd
 
 A multiplayer driving game for the U.S. Drive a loop in your car to claim the land inside it. The bigger the area (in square miles), the higher your score. Drive a loop through someone else's land and you steal the overlapping piece. They lose exactly that piece, you gain it.
 
@@ -35,12 +35,12 @@ Points are square miles x 100, so 0.35 square miles is 35 points.
 ### How inviting works
 
 1. Open the Friends screen (two-person icon, top left). You get an 8-character code and a Share button.
-2. The shared message contains a `driveclaim://invite/CODE` link and the plain code.
+2. The shared message contains a `loopd://invite/CODE` link and the plain code.
 3. If your friend already has the app, tapping the link opens it and asks "Add friend?". If they do not, they can type the code under Friends > Add a friend.
 4. Friendships go both ways. Only the server can create them.
 
 Limits to know about:
-- The `driveclaim://` link only opens the app if it is already installed. A link that also works for people without the app (a Universal Link or App Store link) needs a website and a paid Apple Developer account, so it is not included yet.
+- The `loopd://` link only opens the app if it is already installed. A link that also works for people without the app (a Universal Link or App Store link) needs a website and a paid Apple Developer account, so it is not included yet.
 - Display names are limited to letters, numbers, spaces, dots, dashes and underscores. There is no profanity filter yet, which you will want before a public launch because names show on the national board.
 - Friends are capped at 100 per player.
 
@@ -73,25 +73,25 @@ These cover anti-cheat, the state lookup, loop building, stealing, re-driving yo
 ### iOS app (needs a Mac with Xcode 15+)
 
 The project is set up so you do NOT build the Xcode project by hand. An
-XcodeGen spec (`project.yml`) generates `DriveClaim.xcodeproj` with all files,
+XcodeGen spec (`project.yml`) generates `Loopd.xcodeproj` with all files,
 Swift packages (TerritoryCore, Firebase), the Info.plist keys and
 the background capabilities already wired. The map uses Apple Maps (MapKit),
 so there is no map API key to get.
 
 Fastest path:
 
-    cd DriveClaim
+    cd driveclaim
     bash setup-mac.sh          # installs XcodeGen, runs tests, generates the project
 
 Then:
 
 1. Download `GoogleService-Info.plist` from your Firebase project into `App/`,
    then re-run `xcodegen generate` so it is included.
-2. `open DriveClaim.xcodeproj`, pick your signing Team, choose a device, Run.
+2. `open Loopd.xcodeproj`, pick your signing Team, choose a device, Run.
 
 If you prefer to do it manually in Xcode instead of XcodeGen:
 
-1. Create a new iOS App named DriveClaim (SwiftUI), drag in the `App/` files.
+1. Create a new iOS App named Loopd (SwiftUI), drag in the `App/` files.
 2. File > Add Package Dependencies > Add Local > `Core/` (TerritoryCore).
 3. Add `https://github.com/firebase/firebase-ios-sdk` with FirebaseAuth,
    FirebaseFirestore, FirebaseFunctions, FirebaseCore.

@@ -1,5 +1,5 @@
 /**
- * DriveClaim server-authoritative game logic.
+ * Loopd server-authoritative game logic.
  *
  * The phone never writes claims, scores, names or friendships directly.
  * It calls these functions, and the server validates everything first.

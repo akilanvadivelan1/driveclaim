@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# One-shot setup for building DriveClaim on a Mac.
-# Run from the DriveClaim folder:  bash setup-mac.sh
+# One-shot setup for building Loopd on a Mac.
+# Run from the repo folder:  bash setup-mac.sh
 set -euo pipefail
 
 echo "==> Checking for Xcode..."
@@ -21,14 +21,15 @@ brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
 echo "==> Running core Swift tests (pure game logic)..."
 ( cd Core && swift test )
 
-echo "==> Generating DriveClaim.xcodeproj from project.yml..."
+echo "==> Generating Loopd.xcodeproj from project.yml..."
+rm -rf DriveClaim.xcodeproj   # leftover from before the rename
 xcodegen generate
 
 echo ""
 echo "Done. Next steps:"
 echo "  1. Download GoogleService-Info.plist from your Firebase project"
 echo "     and drop it into the App/ folder, then re-run: xcodegen generate"
-echo "  2. open DriveClaim.xcodeproj"
+echo "  2. open Loopd.xcodeproj"
 echo "  3. Pick your Team under Signing & Capabilities, choose a device, and Run."
 echo "  (The map uses Apple Maps, so there is no map API key to set up.)"
 echo ""

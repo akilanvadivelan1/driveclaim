@@ -50,7 +50,7 @@ struct ContentView: View {
             Button("Add friend") { Task { await accept(invite) } }
             Button("Not now", role: .cancel) { firebase.pendingInvite = nil }
         } message: { _ in
-            Text("Someone invited you to compete on DriveClaim. Add them as a friend?")
+            Text("Someone invited you to compete on Loopd. Add them as a friend?")
         }
     }
 
