@@ -3,6 +3,7 @@ import SwiftUI
 /// Your name, your invite link, adding a friend by code, and your friends list.
 struct FriendsView: View {
     @EnvironmentObject var firebase: FirebaseService
+    @EnvironmentObject var game: GameStore
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""
@@ -12,6 +13,9 @@ struct FriendsView: View {
     @State private var addMessage: String?
     @State private var friends: [FirebaseService.LeaderboardRow] = []
     @State private var busy = false
+    @State private var showAuth = false
+    @State private var confirmSignOut = false
+    @State private var accountMessage: String?
 
     private var shareText: String {
         guard let code = inviteCode else { return "" }
@@ -26,6 +30,7 @@ struct FriendsView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     header
+                    accountCard
                     nameCard
                     inviteCard
                     addCard
@@ -41,6 +46,15 @@ struct FriendsView: View {
             await loadFriends()
         }
         .onChange(of: firebase.friendIds) { _ in Task { await loadFriends() } }
+        .sheet(isPresented: $showAuth) { AuthView(isGate: false) }
+        .confirmationDialog("Sign out of Loopd?", isPresented: $confirmSignOut, titleVisibility: .visible) {
+            Button("Sign out", role: .destructive) {
+                do { try firebase.signOut() } catch { accountMessage = error.localizedDescription }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Your land and points stay safe in your account. Sign back in anytime.")
+        }
     }
 
     // MARK: Pieces
@@ -57,6 +71,39 @@ struct FriendsView: View {
                     .background(Theme.card, in: Circle())
             }
         }
+    }
+
+    private var accountCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Account").font(.headline)
+
+            switch firebase.authState {
+            case .signedIn:
+                Text("Signed in as \(firebase.email ?? "your account"). Your land, points and friends are saved to this account.")
+                    .font(.caption).foregroundColor(Theme.textDim)
+                Button("Sign out") { confirmSignOut = true }
+                    .buttonStyle(.bordered)
+                    .tint(Theme.pink)
+                    .disabled(game.isDriving)
+                if game.isDriving {
+                    Text("End your drive before signing out.")
+                        .font(.caption2).foregroundColor(Theme.textDim)
+                }
+            case .guest:
+                Text("You are playing as a guest, so your progress is only saved on this phone. Create an account to keep it if you change phones or delete the app.")
+                    .font(.caption).foregroundColor(Theme.textDim)
+                Button("Create account or sign in") { showAuth = true }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Theme.accent)
+            default:
+                Text("Accounts turn on once Firebase is set up.")
+                    .font(.caption).foregroundColor(Theme.textDim)
+            }
+
+            if let accountMessage { Text(accountMessage).font(.caption).foregroundColor(Theme.pink) }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card()
     }
 
     private var nameCard: some View {

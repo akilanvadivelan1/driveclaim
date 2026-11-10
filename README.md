@@ -23,6 +23,22 @@ Scoring and stealing are server-authoritative. The phone only records the raw GP
 - `Firebase/functions/` is the Cloud Function that owns game logic, using Turf.js for robust polygon operations.
 - `Firebase/firestore.rules` locks down writes to the server.
 
+## Accounts
+
+Your progress (land, points, friends, name) belongs to your account, not to the phone.
+
+- On first launch you can **create an account** with an email and password, **sign in** to an existing one, or **continue as guest**.
+- A guest is upgraded in place when they create an account, so nothing they earned is lost. The player id stays the same.
+- If you delete the app or get a new phone, sign in with your email and everything comes back.
+- Guest progress only lives on that phone. The app says so on the sign-in screen and in the Account card (Friends screen).
+- You can reset a forgotten password from the sign-in screen.
+- Sign out is under Friends > Account. It is disabled while you are driving.
+
+Not done yet:
+- Sign in with Apple and Google. Sign in with Apple needs a paid Apple Developer membership for its capability, and the app does not need it while email is the only login option.
+- Email verification, so anyone can sign up with any email address for now.
+- **Delete my account.** Apple requires an in-app way to delete your account and data before an app that creates accounts can be released on the App Store. Plan to add this before submitting.
+
 ## Friends and leaderboards
 
 The leaderboard has two sections, and each one can be a list or a map.
@@ -66,7 +82,7 @@ These cover anti-cheat, the state lookup, loop building, stealing, re-driving yo
 
 ### Firebase backend
 
-1. Create a Firebase project. Enable Firestore, Anonymous Authentication, and Cloud Functions (Blaze plan is required for outbound deps).
+1. Create a Firebase project. Enable Firestore, Cloud Functions, and two sign-in methods under Authentication: **Anonymous** (for guests) and **Email/Password** (for accounts) (Blaze plan is required for outbound deps).
 2. `cd Firebase/functions && npm install`
 3. `firebase deploy --only functions,firestore`
 

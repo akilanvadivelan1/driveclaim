@@ -11,6 +11,8 @@ final class FirebaseService: ObservableObject {
     @Published var profile = Profile()
     @Published var friendIds: Set<String> = []
     @Published var uid: String?
+    @Published var email: String?
+    @Published var authState: AuthState = .unknown
     /// Set when the app is opened from an invite link, until the user answers.
     @Published var pendingInvite: PendingInvite?
 
@@ -19,6 +21,14 @@ final class FirebaseService: ObservableObject {
     private var claimsListener: ListenerRegistration?
     private var profileListener: ListenerRegistration?
     private var friendsListener: ListenerRegistration?
+    private var authHandle: AuthStateDidChangeListenerHandle?
+
+    enum AuthState: Equatable {
+        case unknown      // still checking
+        case signedOut    // show the sign-in screen
+        case guest        // playing without an account
+        case signedIn     // has an email account
+    }
 
     /// False until GoogleService-Info.plist is added. The UI still runs without it.
     var isConfigured: Bool { FirebaseApp.app() != nil }
@@ -72,18 +82,86 @@ final class FirebaseService: ObservableObject {
 
     // MARK: Sign in and live data
 
-    /// Anonymous auth gives a stable player id without a login screen.
-    func signInIfNeeded() {
-        guard isConfigured else { return }
-        if let user = Auth.auth().currentUser {
-            uid = user.uid
-            startListening()
-            return
+    // MARK: Accounts
+
+    /// Call once when the app appears. Watches sign-in state for the whole app.
+    /// The listener fires right away with whoever is already signed in (or nobody).
+    func start() {
+        guard isConfigured, authHandle == nil else { return }
+        authHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            guard let self else { return }
+            if let user {
+                self.apply(user)
+                self.startListening()
+            } else {
+                self.stopListening()
+                self.uid = nil
+                self.email = nil
+                self.allClaims = []
+                self.profile = Profile()
+                self.friendIds = []
+                self.authState = .signedOut
+            }
         }
-        Auth.auth().signInAnonymously { [weak self] result, _ in
-            guard let user = result?.user else { return }
-            self?.uid = user.uid
-            self?.startListening()
+    }
+
+    private func apply(_ user: User) {
+        uid = user.uid
+        email = user.email
+        authState = user.isAnonymous ? .guest : .signedIn
+    }
+
+    /// Guests get a temporary identity so they can play right away.
+    func continueAsGuest() async throws {
+        guard isConfigured else { throw NotConfigured() }
+        _ = try await Auth.auth().signInAnonymously()
+    }
+
+    /// Makes an account. If you are playing as a guest, the guest is upgraded in place,
+    /// so your land, points and friends come with you.
+    func createAccount(email: String, password: String) async throws {
+        guard isConfigured else { throw NotConfigured() }
+        if let user = Auth.auth().currentUser, user.isAnonymous {
+            let credential = EmailAuthProvider.credential(withEmail: email, password: password)
+            let result = try await user.link(with: credential)
+            // Linking keeps the same player id and does not trigger the state listener.
+            await MainActor.run { self.apply(result.user) }
+        } else {
+            _ = try await Auth.auth().createUser(withEmail: email, password: password)
+        }
+    }
+
+    /// Signs in to an existing account, for example after reinstalling or on a new phone.
+    func signIn(email: String, password: String) async throws {
+        guard isConfigured else { throw NotConfigured() }
+        _ = try await Auth.auth().signIn(withEmail: email, password: password)
+    }
+
+    func sendPasswordReset(email: String) async throws {
+        guard isConfigured else { throw NotConfigured() }
+        try await Auth.auth().sendPasswordReset(withEmail: email)
+    }
+
+    func signOut() throws {
+        try Auth.auth().signOut()
+    }
+
+    /// Plain-English messages. Firebase's error codes are fixed numbers, so matching on
+    /// them works across SDK versions.
+    static func authMessage(_ error: Error) -> String {
+        let ns = error as NSError
+        guard ns.domain == "FIRAuthErrorDomain" else { return error.localizedDescription }
+        switch ns.code {
+        case 17007: return "That email already has an account. Try signing in instead."
+        case 17008: return "That email address does not look right."
+        case 17026: return "Pick a stronger password with at least 8 characters."
+        case 17004, 17009, 17011: return "That email or password is not right."
+        case 17010: return "Too many tries. Please wait a bit and try again."
+        case 17020: return "No internet connection. Please try again."
+        case 17005: return "This account has been turned off."
+        case 17006: return "Email sign-in is switched off. Turn on Email/Password in the Firebase console."
+        case 17025: return "That email is already linked to a different account."
+        default: return error.localizedDescription
         }
     }
 
@@ -135,7 +213,10 @@ final class FirebaseService: ObservableObject {
         friendsListener?.remove()
     }
 
-    deinit { stopListening() }
+    deinit {
+        stopListening()
+        if let handle = authHandle { Auth.auth().removeStateDidChangeListener(handle) }
+    }
 
     // MARK: Calls to the server
 

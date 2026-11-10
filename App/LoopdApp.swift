@@ -22,10 +22,10 @@ struct LoopdApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
                 .environmentObject(game)
                 .environmentObject(firebase)
-                .onAppear { firebase.signInIfNeeded() }
+                .onAppear { firebase.start() }
                 .onOpenURL { firebase.handle(url: $0) }
         }
     }
