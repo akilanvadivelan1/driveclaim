@@ -27,7 +27,19 @@ final class FirebaseService: ObservableObject {
         case unknown      // still checking
         case signedOut    // show the sign-in screen
         case guest        // playing without an account
-        case signedIn     // has an email account
+        case needsVerification  // email account that has not confirmed its email yet
+        case signedIn     // has a verified email account
+    }
+
+    // MARK: Remember me
+
+    static let rememberMeKey = "rememberMe"
+
+    /// When off, an email account is signed out the next time the app is opened.
+    /// Email verification is separate and only ever happens once per account.
+    static var rememberMe: Bool {
+        get { UserDefaults.standard.object(forKey: rememberMeKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: rememberMeKey) }
     }
 
     /// False until GoogleService-Info.plist is added. The UI still runs without it.
@@ -88,6 +100,12 @@ final class FirebaseService: ObservableObject {
     /// The listener fires right away with whoever is already signed in (or nobody).
     func start() {
         guard isConfigured, authHandle == nil else { return }
+
+        // "Remember me" off means email accounts sign in again after the app is reopened.
+        if !Self.rememberMe, let user = Auth.auth().currentUser, !user.isAnonymous {
+            try? Auth.auth().signOut()
+        }
+
         authHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             guard let self else { return }
             if let user {
@@ -108,7 +126,13 @@ final class FirebaseService: ObservableObject {
     private func apply(_ user: User) {
         uid = user.uid
         email = user.email
-        authState = user.isAnonymous ? .guest : .signedIn
+        if user.isAnonymous {
+            authState = .guest
+        } else if user.isEmailVerified {
+            authState = .signedIn
+        } else {
+            authState = .needsVerification
+        }
     }
 
     /// Guests get a temporary identity so they can play right away.
@@ -124,10 +148,12 @@ final class FirebaseService: ObservableObject {
         if let user = Auth.auth().currentUser, user.isAnonymous {
             let credential = EmailAuthProvider.credential(withEmail: email, password: password)
             let result = try await user.link(with: credential)
+            try? await result.user.sendEmailVerification()   // the verify screen has a Resend button
             // Linking keeps the same player id and does not trigger the state listener.
             await MainActor.run { self.apply(result.user) }
         } else {
-            _ = try await Auth.auth().createUser(withEmail: email, password: password)
+            let result = try await Auth.auth().createUser(withEmail: email, password: password)
+            try? await result.user.sendEmailVerification()
         }
     }
 
@@ -135,6 +161,27 @@ final class FirebaseService: ObservableObject {
     func signIn(email: String, password: String) async throws {
         guard isConfigured else { throw NotConfigured() }
         _ = try await Auth.auth().signIn(withEmail: email, password: password)
+    }
+
+    /// Asks Firebase whether the email has been confirmed yet. Returns true once it has.
+    /// This also refreshes the sign-in token so the server sees the verified email.
+    @discardableResult
+    func refreshVerification() async -> Bool {
+        guard isConfigured, let user = Auth.auth().currentUser, !user.isAnonymous else { return false }
+        do {
+            try await user.reload()
+            guard user.isEmailVerified else { return false }
+            _ = try await user.getIDTokenResult(forcingRefresh: true)
+            await MainActor.run { self.apply(user) }
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    func resendVerification() async throws {
+        guard isConfigured, let user = Auth.auth().currentUser else { throw NotConfigured() }
+        try await user.sendEmailVerification()
     }
 
     func sendPasswordReset(email: String) async throws {

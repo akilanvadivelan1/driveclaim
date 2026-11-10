@@ -34,9 +34,18 @@ Your progress (land, points, friends, name) belongs to your account, not to the 
 - You can reset a forgotten password from the sign-in screen.
 - Sign out is under Friends > Account. It is disabled while you are driving.
 
+### Email verification and Remember me
+
+- After you create an account, Firebase emails you a **verification link**. Tap it once and you are done. The app notices on its own and moves on.
+- Verification happens **once per account**. Signing in again on any phone never asks for it again.
+- The server also checks it. An email account that has not verified cannot claim land, add friends or see leaderboards.
+- Guests skip verification, since they have no email.
+- **Remember me** (on the sign-in screen, on by default) keeps you signed in when you close and reopen the app. If you turn it off, you sign in again with your password each time you open the app.
+- Firebase sends a link rather than a numeric code. Six-digit codes need an email-sending service and a secret key, so they are not included.
+- The default email comes from a Firebase address and may land in spam. You can edit the wording under Authentication > Templates in the Firebase console.
+
 Not done yet:
 - Sign in with Apple and Google. Sign in with Apple needs a paid Apple Developer membership for its capability, and the app does not need it while email is the only login option.
-- Email verification, so anyone can sign up with any email address for now.
 - **Delete my account.** Apple requires an in-app way to delete your account and data before an app that creates accounts can be released on the App Store. Plan to add this before submitting.
 
 ## Friends and leaderboards
@@ -81,6 +90,20 @@ When your loop overlaps a victim's claim:
 These cover anti-cheat, the state lookup, loop building, stealing, re-driving your own land, points, invite codes and name rules. They do not talk to Firebase itself, so the first real deploy is still the true end-to-end test.
 
 ### Firebase backend
+
+Quick path from the repo folder (needs Node 20 or newer):
+
+    npm install -g firebase-tools
+    firebase login
+    cd Firebase/functions && npm install && cd ..
+    firebase use --add          # pick your Firebase project
+    firebase deploy
+
+Then add `GoogleService-Info.plist` to `App/` and run `xcodegen generate`.
+Until that file is in the app, Loopd skips sign-in and shows the game only, and
+drives cannot be claimed.
+
+Details:
 
 1. Create a Firebase project. Enable Firestore, Cloud Functions, and two sign-in methods under Authentication: **Anonymous** (for guests) and **Email/Password** (for accounts) (Blaze plan is required for outbound deps).
 2. `cd Firebase/functions && npm install`

@@ -29,6 +29,9 @@ const BOARD_SIZE = 100;
 
 function requireAuth(context) {
   if (!context.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+  if (!S.canPlay(context.auth.token)) {
+    throw new HttpsError("permission-denied", "Please verify your email first.");
+  }
   return context.auth.uid;
 }
 

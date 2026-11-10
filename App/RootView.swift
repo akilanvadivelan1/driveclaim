@@ -18,6 +18,8 @@ struct RootView: View {
                     }
                 case .signedOut:
                     AuthView(isGate: true)
+                case .needsVerification:
+                    VerifyEmailView()
                 case .guest, .signedIn:
                     ContentView()
                 }

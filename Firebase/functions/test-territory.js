@@ -117,4 +117,11 @@ ok("too short names fail", S.validateDisplayName("a").ok === false);
 ok("too long names fail", S.validateDisplayName("x".repeat(21)).ok === false);
 ok("symbols and markup fail", S.validateDisplayName("<script>").ok === false);
 
+console.log("Email verification rule:");
+ok("guests can play", S.canPlay({ firebase: { sign_in_provider: "anonymous" } }) === true);
+ok("verified email accounts can play", S.canPlay({ firebase: { sign_in_provider: "password" }, email_verified: true }) === true);
+ok("unverified email accounts cannot play", S.canPlay({ firebase: { sign_in_provider: "password" }, email_verified: false }) === false);
+ok("a token with no verification info cannot play", S.canPlay({ firebase: { sign_in_provider: "password" } }) === false);
+ok("no token cannot play", S.canPlay(null) === false);
+
 console.log(`\nAll ${passed} checks passed.`);

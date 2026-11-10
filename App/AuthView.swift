@@ -17,6 +17,7 @@ struct AuthView: View {
     @State private var mode: Mode = .create
     @State private var email = ""
     @State private var password = ""
+    @State private var rememberMe = FirebaseService.rememberMe
     @State private var busy = false
     @State private var message: String?
     @State private var info: String?
@@ -92,6 +93,10 @@ struct AuthView: View {
                 .padding(14)
                 .background(Theme.cardLight, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
+            Toggle("Remember me", isOn: $rememberMe)
+                .tint(Theme.accent)
+                .font(.subheadline)
+
             if let message {
                 Text(message)
                     .font(.footnote)
@@ -154,6 +159,7 @@ struct AuthView: View {
         message = nil
         info = nil
         defer { busy = false }
+        FirebaseService.rememberMe = rememberMe
         do {
             switch mode {
             case .create: try await firebase.createAccount(email: cleanEmail, password: password)

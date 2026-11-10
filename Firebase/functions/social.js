@@ -45,7 +45,19 @@ function validateDisplayName(raw) {
   return { ok: true, name };
 }
 
+/**
+ * Guests (anonymous) can play. Anyone with an email account must have confirmed
+ * that email first. `token` is the decoded sign-in token from Firebase.
+ */
+function canPlay(token) {
+  if (!token) return false;
+  const provider = token.firebase && token.firebase.sign_in_provider;
+  if (provider === "anonymous") return true;
+  return token.email_verified === true;
+}
+
 module.exports = {
+  canPlay,
   POINTS_PER_SQ_MILE,
   toPoints,
   generateInviteCode,
