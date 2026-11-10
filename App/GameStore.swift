@@ -54,8 +54,10 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
         defer { submitting = false }
         do {
             let r = try await firebase.submitDrive(recorded)
-            let base = String(format: "You claimed %.2f square miles.", r.claimed)
-            let steal = r.stolen > 0.001 ? String(format: " You stole %.2f from rivals.", r.stolen) : ""
+            let base = String(format: "You claimed %.2f square miles for %d points.", r.claimedSquareMiles, r.claimedPoints)
+            let steal = r.stolenSquareMiles > 0.001
+                ? String(format: " You took %.2f square miles from rivals.", r.stolenSquareMiles)
+                : ""
             let msg = base + steal
             statusMessage = msg
             say(msg)

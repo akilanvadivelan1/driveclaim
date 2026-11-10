@@ -26,6 +26,7 @@ struct DriveClaimApp: App {
                 .environmentObject(game)
                 .environmentObject(firebase)
                 .onAppear { firebase.signInIfNeeded() }
+                .onOpenURL { firebase.handle(url: $0) }
         }
     }
 }

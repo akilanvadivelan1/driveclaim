@@ -13,9 +13,15 @@ enum Theme {
     static let gradient = LinearGradient(
         colors: [accent, pink], startPoint: .topLeading, endPoint: .bottomTrailing)
 
-    // Map overlay colors (UIKit)
-    static let mineUI  = UIColor(red: 0.48, green: 0.36, blue: 1.00, alpha: 1)
-    static let rivalUI = UIColor(red: 0.96, green: 0.56, blue: 0.69, alpha: 1)
+    // Map overlay colors (UIKit). Yours is violet, friends get their own color.
+    static let mineUI = UIColor(red: 0.48, green: 0.36, blue: 1.00, alpha: 1)
+    static let friendPaletteUI: [UIColor] = [
+        UIColor(red: 0.96, green: 0.56, blue: 0.69, alpha: 1),   // pink
+        UIColor(red: 0.30, green: 0.80, blue: 0.78, alpha: 1),   // teal
+        UIColor(red: 0.98, green: 0.74, blue: 0.35, alpha: 1),   // amber
+        UIColor(red: 0.45, green: 0.72, blue: 0.98, alpha: 1)    // sky
+    ]
+    static let otherUI = UIColor(white: 0.75, alpha: 1)           // everyone else
 }
 
 /// Rounded dark card used across screens.
@@ -41,5 +47,29 @@ struct PillButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity, minHeight: 64)   // big target, easy to hit
             .background(color, in: Capsule())
             .opacity(configuration.isPressed ? 0.8 : 1)
+    }
+}
+
+/// Small key that explains the map colors.
+struct LegendView: View {
+    var filter: MapFilter
+
+    var body: some View {
+        HStack(spacing: 14) {
+            dot(Color(Theme.mineUI), "You")
+            dot(Color(Theme.friendPaletteUI[0]), "Friends")
+            if filter == .everyone { dot(Color(Theme.otherUI), "Everyone else") }
+        }
+        .font(.caption2.weight(.semibold))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Theme.card.opacity(0.92), in: Capsule())
+    }
+
+    private func dot(_ color: Color, _ label: String) -> some View {
+        HStack(spacing: 5) {
+            Circle().fill(color.opacity(0.9)).frame(width: 9, height: 9)
+            Text(label)
+        }
     }
 }

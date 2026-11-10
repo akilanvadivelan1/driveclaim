@@ -12,7 +12,7 @@ final class TerritoryCoreTests: XCTestCase {
                     Coord(lat: o.lat + dLat, lon: o.lon + dLon),
                     Coord(lat: o.lat + dLat, lon: o.lon)]
         XCTAssertEqual(GeoMath.areaSquareMiles(ring), 1.0, accuracy: 0.01)
-        XCTAssertEqual(Scoring.points(forSquareMiles: 1.0), 1000)
+        XCTAssertEqual(Scoring.points(forSquareMiles: 1.0), 100)
     }
 
     func testLoopClosesAndClaims() {
@@ -66,5 +66,51 @@ extension TerritoryCoreTests {
         let b = [far, Coord(lat: far.lat, lon: far.lon + 0.01),
                  Coord(lat: far.lat + 0.01, lon: far.lon + 0.01), Coord(lat: far.lat + 0.01, lon: far.lon)]
         XCTAssertEqual(PolygonClip.stolenSquareMiles(thief: b, victim: a), 0, accuracy: 1e-6)
+    }
+}
+
+/// These strings were produced by the real server code (territory.js), so the
+/// app and the backend are proven to agree on the stored format.
+extension TerritoryCoreTests {
+    private var serverPolygon: String {
+        #"{"type":"Polygon","coordinates":[[[-104.99,39.74],[-104.971178,39.74],[-104.971178,39.754473],[-104.99,39.754473],[-104.99,39.74]]]}"#
+    }
+    private var serverMultiPolygon: String {
+        #"{"type":"MultiPolygon","coordinates":[[[[-104.99,39.74],[-104.971178,39.74],[-104.971178,39.754473],[-104.99,39.754473],[-104.99,39.74]]],[[[-104.933534,39.74],[-104.914712,39.74],[-104.914712,39.754473],[-104.933534,39.754473],[-104.933534,39.74]]]]}"#
+    }
+    private var polygonWithHole: String {
+        #"{"type":"Polygon","coordinates":[[[0,0],[0,4],[4,4],[4,0],[0,0]],[[1,1],[1,2],[2,2],[2,1],[1,1]]]}"#
+    }
+
+    func testParsesServerPolygon() {
+        let polys = GeoJSONGeometry.parsePolygons(serverPolygon)
+        XCTAssertEqual(polys.count, 1)
+        XCTAssertEqual(polys[0].count, 1)
+        // GeoJSON is [lon, lat], so the first point must be lat 39.74, lon -104.99.
+        XCTAssertEqual(polys[0][0][0].lat, 39.74, accuracy: 1e-9)
+        XCTAssertEqual(polys[0][0][0].lon, -104.99, accuracy: 1e-9)
+        XCTAssertEqual(GeoMath.areaSquareMiles(polys[0][0]), 1.0, accuracy: 0.02)
+    }
+
+    func testParsesMultiPolygonAndHoles() {
+        XCTAssertEqual(GeoJSONGeometry.parsePolygons(serverMultiPolygon).count, 2)
+        let holey = GeoJSONGeometry.parsePolygons(polygonWithHole)
+        XCTAssertEqual(holey.count, 1)
+        XCTAssertEqual(holey[0].count, 2, "outer ring plus one hole")
+    }
+
+    func testBadGeometryParsesToNothing() {
+        XCTAssertTrue(GeoJSONGeometry.parsePolygons("not json").isEmpty)
+        XCTAssertTrue(GeoJSONGeometry.parsePolygons(#"{"type":"Point","coordinates":[1,2]}"#).isEmpty)
+    }
+
+    func testMinutesAndColorHelpers() {
+        XCTAssertEqual(Display.minutes(0), "0 min")
+        XCTAssertEqual(Display.minutes(45), "45 min")
+        XCTAssertEqual(Display.minutes(125), "2h 05m")
+        XCTAssertEqual(Display.minutes(-5), "0 min")
+        XCTAssertEqual(Display.colorIndex(for: "abc123", count: 4), Display.colorIndex(for: "abc123", count: 4))
+        XCTAssertTrue((0..<4).contains(Display.colorIndex(for: "someUserId", count: 4)))
+        XCTAssertEqual(Display.colorIndex(for: "x", count: 0), 0)
     }
 }

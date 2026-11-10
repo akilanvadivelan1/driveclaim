@@ -1,45 +1,84 @@
 import SwiftUI
+import TerritoryCore
 
-/// State and national leaderboards, ranked by total square miles held.
+/// Two sections: Friends and Nation. Each can be shown as a ranked list
+/// or as a map you can zoom and drag around.
 struct LeaderboardView: View {
     @EnvironmentObject var firebase: FirebaseService
     @Environment(\.dismiss) private var dismiss
 
-    enum Scope: String, CaseIterable { case national = "National", state = "My State" }
+    enum Board: String, CaseIterable { case friends = "Friends", nation = "Nation" }
+    enum ViewMode: String, CaseIterable { case list = "List", map = "Map" }
+    enum NationArea: String, CaseIterable { case all = "All U.S.", state = "My state" }
 
-    @State private var scope: Scope = .national
+    @State private var section: Board = .friends
+    @State private var layout: ViewMode = .list
+    @State private var nationArea: NationArea = .all
     @State private var rows: [FirebaseService.LeaderboardRow] = []
     @State private var loading = false
     @State private var error: String?
+    @State private var showFriends = false
 
-    /// State code is derived server-side from your land.
-    @State private var myState: String = "US"
+    private var mapFilter: MapFilter { section == .friends ? .mineAndFriends : .everyone }
+
+    private var myState: String? {
+        guard let s = firebase.profile.homeState, s != "US" else { return nil }
+        return s
+    }
+
+    /// Changes whenever the list needs to be fetched again.
+    private var loadKey: String { "\(section.rawValue)-\(nationArea.rawValue)" }
 
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
 
-            VStack(spacing: 16) {
+            VStack(spacing: 14) {
                 header
 
-                Picker("Scope", selection: $scope) {
-                    ForEach(Scope.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                Picker("Section", selection: $section) {
+                    ForEach(Board.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                 }
                 .pickerStyle(.segmented)
+
+                HStack(spacing: 10) {
+                    Picker("Layout", selection: $layout) {
+                        ForEach(ViewMode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+
+                    if section == .nation && layout == .list && myState != nil {
+                        Picker("Area", selection: $nationArea) {
+                            ForEach(NationArea.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                }
 
                 content
             }
             .padding()
         }
         .preferredColorScheme(.dark)
-        .task(id: scope) { await load() }
+        .task(id: loadKey) { await load() }
+        .sheet(isPresented: $showFriends) { FriendsView() }
     }
+
+    // MARK: Pieces
 
     private var header: some View {
         HStack {
-            Text(scope == .state ? "\(myState) Leaders" : "Leaders")
+            Text(section == .friends ? "Friends" : "Nation")
                 .font(.system(size: 34, weight: .heavy, design: .rounded))
             Spacer()
+            if section == .friends {
+                Button { showFriends = true } label: {
+                    Image(systemName: "person.badge.plus")
+                        .font(.headline)
+                        .frame(width: 40, height: 40)
+                        .background(Theme.card, in: Circle())
+                }
+            }
             Button { dismiss() } label: {
                 Image(systemName: "xmark")
                     .font(.headline)
@@ -52,10 +91,20 @@ struct LeaderboardView: View {
 
     @ViewBuilder
     private var content: some View {
-        if loading {
+        if layout == .map {
+            mapContent
+        } else if loading {
             ProgressView().tint(.white).frame(maxHeight: .infinity)
         } else if let error {
             emptyState(icon: "wifi.slash", title: "Could not load", detail: error)
+        } else if section == .friends && rows.count <= 1 {
+            VStack(spacing: 14) {
+                if let me = rows.first { rowView(me) }
+                emptyState(icon: "person.2", title: "No friends yet",
+                           detail: "Send your invite link and see who covers the most land.")
+                Button("Invite friends") { showFriends = true }
+                    .buttonStyle(PillButtonStyle())
+            }
         } else if rows.isEmpty {
             emptyState(icon: "map", title: "No claims yet", detail: "Be the first to claim land here.")
         } else {
@@ -67,6 +116,15 @@ struct LeaderboardView: View {
         }
     }
 
+    private var mapContent: some View {
+        ZStack(alignment: .bottomLeading) {
+            MapView(filter: mapFilter, follow: .constant(false), fitClaims: true)
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            LegendView(filter: mapFilter).padding(12)
+        }
+        .frame(maxHeight: .infinity)
+    }
+
     private func rowView(_ row: FirebaseService.LeaderboardRow) -> some View {
         HStack(spacing: 14) {
             Text("\(row.rank)")
@@ -74,20 +132,31 @@ struct LeaderboardView: View {
                 .foregroundStyle(row.rank <= 3 ? AnyShapeStyle(Theme.gradient) : AnyShapeStyle(Theme.textDim))
                 .frame(width: 34)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(row.isMe ? "You" : shortId(row.ownerId))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(row.isMe ? "You" : name(for: row))
                     .font(.headline)
-                if let st = row.state, scope == .national {
-                    Text(st).font(.caption).foregroundColor(Theme.textDim)
+                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    Image(systemName: "clock").font(.caption2)
+                    Text(Display.minutes(row.minutesDriven) + " driven")
+                    if let st = row.state, section == .nation {
+                        Text("· \(st)")
+                    }
                 }
+                .font(.caption)
+                .foregroundColor(Theme.textDim)
             }
 
             Spacer()
 
-            Text(String(format: "%.2f", row.squareMiles))
-                .font(.system(.title3, design: .rounded).weight(.bold))
-                .monospacedDigit()
-            Text("sq mi").font(.caption).foregroundColor(Theme.textDim)
+            VStack(alignment: .trailing, spacing: 3) {
+                Text("\(row.points) pts")
+                    .font(.system(.title3, design: .rounded).weight(.bold))
+                    .monospacedDigit()
+                Text(String(format: "%.2f sq mi", row.squareMiles))
+                    .font(.caption)
+                    .foregroundColor(Theme.textDim)
+            }
         }
         .padding(14)
         .background(
@@ -111,18 +180,32 @@ struct LeaderboardView: View {
         .frame(maxHeight: .infinity)
     }
 
+    // MARK: Data
+
+    @MainActor
     private func load() async {
         loading = true
         error = nil
         defer { loading = false }
         do {
-            rows = try await firebase.leaderboard(state: scope == .state ? myState : nil)
-            if scope == .national, let mine = rows.first(where: { $0.isMe })?.state { myState = mine }
+            switch section {
+            case .friends:
+                rows = try await firebase.leaderboard(scope: .friends)
+            case .nation:
+                if nationArea == .state, let state = myState {
+                    rows = try await firebase.leaderboard(scope: .state, state: state)
+                } else {
+                    rows = try await firebase.leaderboard(scope: .national)
+                }
+            }
         } catch {
             self.error = error.localizedDescription
         }
     }
 
-    // Anonymous ids are long, so show a short stable handle.
-    private func shortId(_ id: String) -> String { "Driver " + String(id.suffix(4)).uppercased() }
+    /// Players who have not picked a name show a short stable handle.
+    private func name(for row: FirebaseService.LeaderboardRow) -> String {
+        if let n = row.displayName, !n.isEmpty { return n }
+        return "Driver " + String(row.ownerId.suffix(4)).uppercased()
+    }
 }

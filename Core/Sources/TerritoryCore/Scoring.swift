@@ -2,7 +2,7 @@ import Foundation
 
 public enum Scoring {
     /// Points awarded per square mile claimed. Bigger loops earn more.
-    public static let pointsPerSquareMile = 1_000.0
+    public static let pointsPerSquareMile = 100.0
     /// Loops smaller than this are ignored (parking lots, roundabouts).
     public static let minimumSquareMiles = 0.02
 

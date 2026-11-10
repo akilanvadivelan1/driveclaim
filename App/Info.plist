@@ -38,6 +38,19 @@
 		<string>audio</string>
 	</array>
 
+	<!-- Lets driveclaim://invite/CODE links open the app. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.yourcompany.driveclaim</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>driveclaim</string>
+			</array>
+		</dict>
+	</array>
+
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

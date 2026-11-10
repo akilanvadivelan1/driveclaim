@@ -1,20 +1,31 @@
 rules_version = '2';
-// Claims, scores and leaderboards are READ-ONLY to clients. Only Cloud
-// Functions (admin SDK) may write them, which keeps scoring, stealing and
-// leaderboard standings server-authoritative and uncheatable.
+// Claims, scores, names and friendships are written ONLY by Cloud Functions
+// (the admin SDK ignores these rules). Clients can read, never write.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /claims/{claimId} {
       allow read: if request.auth != null;
-      allow write: if false; // only submitDrive writes claims
+      allow write: if false;
     }
     match /players/{playerId} {
       allow read: if request.auth != null;
-      allow write: if false; // national scores set by the server only
+      allow write: if false;
     }
     match /leaderboard_state/{docId} {
       allow read: if request.auth != null;
-      allow write: if false; // per-state scores set by the server only
+      allow write: if false;
+    }
+    // You can only see friendships you are part of.
+    match /friendships/{friendshipId} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.members;
+      allow write: if false;
+    }
+    // Invite codes and private data are never readable by clients.
+    match /invites/{code} {
+      allow read, write: if false;
+    }
+    match /private_players/{playerId} {
+      allow read, write: if false;
     }
   }
 }

@@ -7,8 +7,9 @@ A multiplayer driving game for the U.S. Drive a loop in your car to claim the la
 - Tap Start drive, then drive normally.
 - When your route forms a loop, the land inside becomes yours.
 - If your loop overlaps a rival's territory, you capture the overlap. Their claim shrinks by that exact shape.
-- Your score is the total square miles you currently hold.
-- Everyone's land updates live. Your land is green, rivals are red.
+- Every square mile you hold is worth 100 points.
+- Everyone's land updates live. Your land is a see-through violet, friends get their own colors, everyone else is soft gray.
+- Driving a loop you already own scores nothing, so only new land counts.
 - Results are spoken aloud so you never need to look at the screen.
 
 ## Why it is built this way
@@ -22,11 +23,32 @@ Scoring and stealing are server-authoritative. The phone only records the raw GP
 - `Firebase/functions/` is the Cloud Function that owns game logic, using Turf.js for robust polygon operations.
 - `Firebase/firestore.rules` locks down writes to the server.
 
+## Friends and leaderboards
+
+The leaderboard has two sections, and each one can be a list or a map.
+
+- **Friends** is a competition between you and the people you invite. The list shows points, square miles and minutes driven. The map shows only your land and your friends' land.
+- **Nation** ranks everyone in the U.S. The list can switch between all of the U.S. and your state. The map shows everyone's land and you can pinch to zoom and drag around.
+
+Points are square miles x 100, so 0.35 square miles is 35 points.
+
+### How inviting works
+
+1. Open the Friends screen (two-person icon, top left). You get an 8-character code and a Share button.
+2. The shared message contains a `driveclaim://invite/CODE` link and the plain code.
+3. If your friend already has the app, tapping the link opens it and asks "Add friend?". If they do not, they can type the code under Friends > Add a friend.
+4. Friendships go both ways. Only the server can create them.
+
+Limits to know about:
+- The `driveclaim://` link only opens the app if it is already installed. A link that also works for people without the app (a Universal Link or App Store link) needs a website and a paid Apple Developer account, so it is not included yet.
+- Display names are limited to letters, numbers, spaces, dots, dashes and underscores. There is no profanity filter yet, which you will want before a public launch because names show on the national board.
+- Friends are capped at 100 per player.
+
 ## The steal rule
 
 When your loop overlaps a victim's claim:
 - Stolen area = the geometric intersection of the two polygons.
-- You own your full loop (empty land plus captured land).
+- You own the new part of your loop (empty land plus captured land). Land you already owned is not counted twice.
 - The victim keeps their claim minus your loop (via polygon difference). If nothing is left, their claim is deleted.
 - Scores adjust in one transaction: you gain your loop's area, each victim loses their overlap.
 
@@ -36,11 +58,17 @@ When your loop overlaps a victim's claim:
 
     cd Core && swift test
 
+### Backend logic tests (works anywhere with Node)
+
+    cd Firebase/functions && npm install && npm test
+
+These cover anti-cheat, the state lookup, loop building, stealing, re-driving your own land, points, invite codes and name rules. They do not talk to Firebase itself, so the first real deploy is still the true end-to-end test.
+
 ### Firebase backend
 
 1. Create a Firebase project. Enable Firestore, Anonymous Authentication, and Cloud Functions (Blaze plan is required for outbound deps).
 2. `cd Firebase/functions && npm install`
-3. `firebase deploy --only functions,firestore:rules`
+3. `firebase deploy --only functions,firestore`
 
 ### iOS app (needs a Mac with Xcode 15+)
 
