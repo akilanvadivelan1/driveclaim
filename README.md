@@ -7,7 +7,7 @@ A multiplayer driving game for the U.S. Drive a loop in your car to claim the la
 - Tap Start drive, then drive normally.
 - When your route forms a loop, the land inside becomes yours.
 - If your loop overlaps a rival's territory, you capture the overlap. Their claim shrinks by that exact shape.
-- Every square mile you hold is worth 100 points.
+- Every square mile you hold is worth 1,000 points.
 - Everyone's land updates live. Your land is a see-through violet, friends get their own colors, everyone else is soft gray.
 - Driving a loop you already own scores nothing, so only new land counts.
 - Results are spoken aloud so you never need to look at the screen.
@@ -55,7 +55,7 @@ The leaderboard has two sections, and each one can be a list or a map.
 - **Friends** is a competition between you and the people you invite. The list shows points, square miles and minutes driven. The map shows only your land and your friends' land.
 - **Nation** ranks everyone in the U.S. The list can switch between all of the U.S. and your state. The map shows everyone's land and you can pinch to zoom and drag around.
 
-Points are square miles x 100, so 0.35 square miles is 35 points.
+Points are square miles x 1,000, so 0.35 square miles is 350 points.
 
 ### How inviting works
 

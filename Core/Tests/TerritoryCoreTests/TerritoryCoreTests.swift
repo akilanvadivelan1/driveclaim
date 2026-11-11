@@ -12,7 +12,7 @@ final class TerritoryCoreTests: XCTestCase {
                     Coord(lat: o.lat + dLat, lon: o.lon + dLon),
                     Coord(lat: o.lat + dLat, lon: o.lon)]
         XCTAssertEqual(GeoMath.areaSquareMiles(ring), 1.0, accuracy: 0.01)
-        XCTAssertEqual(Scoring.points(forSquareMiles: 1.0), 100)
+        XCTAssertEqual(Scoring.points(forSquareMiles: 1.0), 1000)
     }
 
     func testLoopClosesAndClaims() {
@@ -112,5 +112,17 @@ extension TerritoryCoreTests {
         XCTAssertEqual(Display.colorIndex(for: "abc123", count: 4), Display.colorIndex(for: "abc123", count: 4))
         XCTAssertTrue((0..<4).contains(Display.colorIndex(for: "someUserId", count: 4)))
         XCTAssertEqual(Display.colorIndex(for: "x", count: 0), 0)
+    }
+}
+
+extension TerritoryCoreTests {
+    func testPointRateMatchesTheServer() {
+        // Firebase/functions/social.js uses 1000 per square mile. Keep these in step.
+        XCTAssertEqual(Scoring.pointsPerSquareMile, 1000)
+        XCTAssertEqual(Scoring.points(forSquareMiles: 0.35), 350)
+    }
+
+    func testSmallestLoopPoints() {
+        XCTAssertEqual(Scoring.points(forSquareMiles: Scoring.minimumSquareMiles), 20)
     }
 }

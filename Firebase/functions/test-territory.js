@@ -104,8 +104,9 @@ console.log("Re-driving your own land:");
 })();
 
 console.log("Points and friends:");
-ok("1 square mile is 100 points", S.toPoints(1) === 100);
-ok("0.35 square miles is 35 points", S.toPoints(0.35) === 35);
+ok("1 square mile is 1000 points", S.toPoints(1) === 1000);
+ok("0.35 square miles is 350 points", S.toPoints(0.35) === 350);
+ok("the smallest loop that counts (0.02 square miles) is 20 points", S.toPoints(0.02) === 20);
 ok("invite codes are 8 valid characters", /^[A-HJ-NP-Z2-9]{8}$/.test(S.generateInviteCode()));
 ok("invite codes are not all the same", new Set(Array.from({ length: 50 }, S.generateInviteCode)).size > 40);
 ok("lowercase codes with spaces are cleaned", S.normalizeInviteCode(" abcd2345 ") === "ABCD2345");

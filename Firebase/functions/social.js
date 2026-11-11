@@ -4,7 +4,7 @@
 const crypto = require("crypto");
 
 // Each square mile is worth this many points.
-const POINTS_PER_SQ_MILE = 100;
+const POINTS_PER_SQ_MILE = 1000;
 
 // No 0, O, 1 or I so codes are easy to read aloud and type.
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
