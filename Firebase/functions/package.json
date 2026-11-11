@@ -2,7 +2,7 @@
   "name": "loopd-functions",
   "description": "Server-authoritative game logic for Loopd",
   "engines": {
-    "node": "20"
+    "node": "22"
   },
   "main": "index.js",
   "dependencies": {
@@ -12,6 +12,6 @@
   },
   "private": true,
   "scripts": {
-    "test": "node test.js && node test-territory.js"
+    "test": "node test.js && node test-territory.js && node test-handlers.js"
   }
 }

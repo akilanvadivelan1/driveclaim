@@ -87,17 +87,26 @@ When your loop overlaps a victim's claim:
 
     cd Firebase/functions && npm install && npm test
 
-These cover anti-cheat, the state lookup, loop building, stealing, re-driving your own land, points, invite codes and name rules. They do not talk to Firebase itself, so the first real deploy is still the true end-to-end test.
+These cover anti-cheat, the state lookup, loop building, stealing, re-driving your own land, points, invite codes, name rules, and the real function handlers for sign-in, email verification and input checks. They do not talk to Firebase itself, so the first real deploy is still the true end-to-end test.
 
 ### Firebase backend
 
-Quick path from the repo folder (needs Node 20 or newer):
+Quick path from the repo folder (any Node 22 or newer works on your Mac):
 
-    npm install -g firebase-tools
-    firebase login
     cd Firebase/functions && npm install && cd ..
-    firebase use --add          # pick your Firebase project
-    firebase deploy
+    npx -y firebase-tools@latest login
+    npx -y firebase-tools@latest use --add      # pick your Firebase project
+    npx -y firebase-tools@latest deploy
+
+Using `npx` means nothing has to be installed globally, which avoids the
+permission error some Macs show for `npm install -g`. If you prefer, install
+once with `curl -sL https://firebase.tools | bash` and then type `firebase`
+instead of the long `npx` command.
+
+The functions run on Node 22 (2nd generation Cloud Functions). Node 20 was
+shut down on Google Cloud on October 30, 2026, so do not set it back to 20.
+A yellow `EBADENGINE` warning on `npm install` is harmless if your Mac has a
+newer Node.
 
 Then add `GoogleService-Info.plist` to `App/` and run `xcodegen generate`.
 Until that file is in the app, Loopd skips sign-in and shows the game only, and

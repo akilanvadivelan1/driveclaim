@@ -10,7 +10,7 @@
  *   addFriend       adds a friend from their invite code
  *   setDisplayName  sets the name others see
  */
-const functions = require("firebase-functions");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const turf = require("@turf/turf");
 const { validateTrail } = require("./anticheat");
@@ -21,25 +21,25 @@ const S = require("./social");
 admin.initializeApp();
 const db = admin.firestore();
 const FieldValue = admin.firestore.FieldValue;
-const { HttpsError } = functions.https;
 
 const MIN_NEW_SQ_MILES = 0.02; // a loop must add at least this much new land
 const MAX_FRIENDS = 100;
 const BOARD_SIZE = 100;
 
-function requireAuth(context) {
-  if (!context.auth) throw new HttpsError("unauthenticated", "Sign in first.");
-  if (!S.canPlay(context.auth.token)) {
+function requireAuth(request) {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+  if (!S.canPlay(request.auth.token)) {
     throw new HttpsError("permission-denied", "Please verify your email first.");
   }
-  return context.auth.uid;
+  return request.auth.uid;
 }
 
 // ---------------------------------------------------------------------------
 // submitDrive
 // ---------------------------------------------------------------------------
-exports.submitDrive = functions.https.onCall(async (data, context) => {
-  const uid = requireAuth(context);
+exports.submitDrive = onCall({ memory: "512MiB", timeoutSeconds: 60 }, async (request) => {
+  const data = request.data || {};
+  const uid = requireAuth(request);
   const trail = data.trail;
 
   // 1. Anti-cheat: shape, timing, speed, acceleration, real movement.
@@ -170,8 +170,9 @@ async function friendIdsOf(uid) {
 /**
  * scope: "friends" | "national" | "state" (state also needs { state: "CO" })
  */
-exports.leaderboard = functions.https.onCall(async (data, context) => {
-  const uid = requireAuth(context);
+exports.leaderboard = onCall(async (request) => {
+  const data = request.data || {};
+  const uid = requireAuth(request);
   const scope = ["friends", "state"].includes(data.scope) ? data.scope : "national";
 
   let entries;
@@ -201,8 +202,9 @@ exports.leaderboard = functions.https.onCall(async (data, context) => {
 // ---------------------------------------------------------------------------
 // Friends
 // ---------------------------------------------------------------------------
-exports.getMyInvite = functions.https.onCall(async (data, context) => {
-  const uid = requireAuth(context);
+exports.getMyInvite = onCall(async (request) => {
+  const data = request.data || {};
+  const uid = requireAuth(request);
   const privateRef = db.collection("private_players").doc(uid);
   const existing = await privateRef.get();
   if (existing.exists && existing.get("inviteCode")) return { code: existing.get("inviteCode") };
@@ -224,8 +226,9 @@ exports.getMyInvite = functions.https.onCall(async (data, context) => {
   throw new HttpsError("internal", "Could not make an invite code. Please try again.");
 });
 
-exports.addFriend = functions.https.onCall(async (data, context) => {
-  const uid = requireAuth(context);
+exports.addFriend = onCall(async (request) => {
+  const data = request.data || {};
+  const uid = requireAuth(request);
   const code = S.normalizeInviteCode(data.code);
   if (!code) throw new HttpsError("invalid-argument", "That code does not look right.");
 
@@ -250,8 +253,9 @@ exports.addFriend = functions.https.onCall(async (data, context) => {
   return { friendId: friendUid, displayName: (friend.exists && friend.get("displayName")) || "Your friend" };
 });
 
-exports.setDisplayName = functions.https.onCall(async (data, context) => {
-  const uid = requireAuth(context);
+exports.setDisplayName = onCall(async (request) => {
+  const data = request.data || {};
+  const uid = requireAuth(request);
   const result = S.validateDisplayName(data.name);
   if (!result.ok) throw new HttpsError("invalid-argument", result.reason);
   await db.collection("players").doc(uid).set({ displayName: result.name }, { merge: true });

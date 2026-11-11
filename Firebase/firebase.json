@@ -7,7 +7,15 @@
     {
       "source": "functions",
       "codebase": "default",
-      "ignore": ["node_modules", ".git", "*.log", "test.js", "test-territory.js"]
+      "ignore": [
+        "node_modules",
+        ".git",
+        "*.log",
+        "test.js",
+        "test-territory.js",
+        "test-handlers.js"
+      ],
+      "runtime": "nodejs22"
     }
   ]
 }
