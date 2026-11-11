@@ -168,12 +168,17 @@ The state leaderboard query needs a Firestore composite index on `leaderboard_st
 
 Every drive is validated on the server before any land is awarded. A drive is rejected if it:
 - has too few or absurdly many GPS points, or malformed/out-of-range coordinates
-- is too quick to be a real loop (under 20 seconds), has non-increasing time, or has a GPS gap over 2 minutes
-- contains an impossible speed (over 120 mph) between two fixes
-- contains impossible acceleration between fixes (teleport / GPS jump)
+- is too quick to be a real loop (under 20 seconds), has non-increasing time, or has a GPS gap over 5 minutes
+- averages over 120 mph across any stretch of 5 seconds or more, or contains a single jump that implies over 300 mph (a teleport)
 - shows almost no real movement (a stationary "drive")
 
 All of this runs server-side. The phone cannot bypass it, and Firestore rules block clients from writing claims or scores directly. The pure logic has Node tests in `functions/test.js` (`node test.js`), and the state lookup is covered there too.
+
+### Why speed is measured over 5 seconds
+
+Real GPS wobbles by several meters from one reading to the next. Over a single second that wobble can look like a 30 to 80 mph change in speed, so judging each hop would reject honest drivers. The server compares each reading with the one at least 5 seconds earlier, where the wobble is small next to the distance covered. The tests in `test.js` use noisy simulated drives to prove honest drives pass and teleports, stale locations and 200 mph drives do not.
+
+The app also cleans the data before sending it. It skips readings with a weak signal (over 30 m of error), the old cached location iPhones return first, and jumps no car could make, and it thins out tiny movements while parked.
 
 ### Limits of the state lookup
 

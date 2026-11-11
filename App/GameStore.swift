@@ -13,6 +13,9 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var isDriving = false
     @Published var statusMessage: String?
     @Published var submitting = false
+    /// Live numbers for the drive in progress.
+    @Published var driveMiles: Double = 0
+    @Published var driveStartedAt: Date?
 
     private var recorded: [TimedCoord] = []
     private let manager = CLLocationManager()
@@ -28,6 +31,7 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
         manager.activityType = .automotiveNavigation
         manager.allowsBackgroundLocationUpdates = true
         manager.pausesLocationUpdatesAutomatically = false
+        manager.showsBackgroundLocationIndicator = true
     }
 
     func start() {
@@ -36,6 +40,8 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
         detector.reset()
         trail = []
         recorded = []
+        driveMiles = 0
+        driveStartedAt = Date()
         manager.startUpdatingLocation()
         isDriving = true
         say("Territory started. Drive a loop to claim land. Loop through a rival to steal theirs.")
@@ -44,6 +50,7 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
     func end() {
         manager.stopUpdatingLocation()
         isDriving = false
+        driveStartedAt = nil
         Task { await submit() }
     }
 
@@ -68,14 +75,45 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     func locationManager(_ m: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        for loc in locations where loc.horizontalAccuracy >= 0 && loc.horizontalAccuracy < 50 {
-            let c = Coord(lat: loc.coordinate.latitude, lon: loc.coordinate.longitude)
-            current = c
+        guard isDriving else { return }
+        for loc in locations {
             speedMph = max(0, loc.speed) * 2.23694
+            guard let c = acceptedCoord(for: loc) else { continue }
+            current = c
             recorded.append(TimedCoord(coord: c, millis: loc.timestamp.timeIntervalSince1970 * 1000))
             _ = detector.add(c)
             trail = detector.trail
         }
+    }
+
+    /// Throws out GPS readings that would make an honest drive look like cheating.
+    /// Returns the position to record, or nil to skip this reading.
+    private func acceptedCoord(for loc: CLLocation) -> Coord? {
+        // Skip readings with no position or a poor signal.
+        guard loc.horizontalAccuracy >= 0, loc.horizontalAccuracy <= 30 else { return nil }
+
+        // iPhones often hand over an old, cached location first. Skip anything from
+        // before this drive started. (Readings can arrive late when the screen is off,
+        // so age alone is not a reason to skip one.)
+        guard let started = driveStartedAt, loc.timestamp >= started.addingTimeInterval(-1) else { return nil }
+
+        let c = Coord(lat: loc.coordinate.latitude, lon: loc.coordinate.longitude)
+
+        if let last = recorded.last {
+            let seconds = loc.timestamp.timeIntervalSince1970 - last.millis / 1000
+            guard seconds > 0 else { return nil }
+            let meters = GeoMath.distanceMeters(last.coord, c)
+
+            // Skip a jump no car could make, which is a bad reading and not real movement.
+            if meters / seconds * 2.23694 > 130 { return nil }
+
+            // Skip tiny wobbles while parked, but still record a point every 10 seconds
+            // so the server never sees a long silent gap at a red light.
+            if meters < 8 && seconds < 10 { return nil }
+
+            driveMiles += meters / 1609.344
+        }
+        return c
     }
 
     private func say(_ text: String) {

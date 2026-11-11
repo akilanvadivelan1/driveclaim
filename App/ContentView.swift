@@ -132,11 +132,7 @@ struct ContentView: View {
                     .background(Theme.cardLight, in: Capsule())
             }
 
-            HStack(spacing: 10) {
-                chip(icon: "speedometer", value: "\(Int(game.speedMph))", label: "mph")
-                chip(icon: "clock", value: Display.minutes(firebase.profile.minutesDriven), label: "driven")
-                chip(icon: "road.lanes", value: String(format: "%.1f", firebase.profile.milesDriven), label: "miles")
-            }
+            statChips
 
             if game.submitting {
                 ProgressView("Sending your drive").tint(.white)
@@ -160,6 +156,24 @@ struct ContentView: View {
         }
         .card()
         .padding(.bottom, 8)
+    }
+
+    /// While driving: this drive's time and miles, updating live.
+    /// Otherwise: your lifetime totals.
+    private var statChips: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            HStack(spacing: 10) {
+                chip(icon: "speedometer", value: "\(Int(game.speedMph))", label: "mph")
+                if game.isDriving, let start = game.driveStartedAt {
+                    let seconds = max(0, Int(context.date.timeIntervalSince(start)))
+                    chip(icon: "clock", value: String(format: "%d:%02d", seconds / 60, seconds % 60), label: "this drive")
+                    chip(icon: "road.lanes", value: String(format: "%.2f", game.driveMiles), label: "miles this drive")
+                } else {
+                    chip(icon: "clock", value: Display.minutes(firebase.profile.minutesDriven), label: "driven in total")
+                    chip(icon: "road.lanes", value: String(format: "%.1f", firebase.profile.milesDriven), label: "miles in total")
+                }
+            }
+        }
     }
 
     private func chip(icon: String, value: String, label: String) -> some View {

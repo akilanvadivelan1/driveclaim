@@ -7,11 +7,12 @@
 const turf = require("@turf/turf");
 
 const MAX_SPEED_MPH = 120;        // highway realistic ceiling
-const MAX_ACCEL_MPH_PER_S = 15;   // ~0-60 in 4s; beyond this is teleport/jitter
+const TELEPORT_MPH = 300;         // no single hop between two fixes can imply more than this
+const SPEED_WINDOW_SECONDS = 5;   // speed is measured over at least this long, so GPS jitter averages out
 const MIN_POINTS = 4;
 const MAX_POINTS = 50000;         // guards against payload-bomb claims
 const MIN_DRIVE_SECONDS = 20;     // a real loop takes time
-const MAX_GAP_SECONDS = 120;      // long GPS gap = we can't trust the path between
+const MAX_GAP_SECONDS = 300;      // long GPS gap = we can't trust the path between
 const MIN_AVG_SPEED_MPH = 3;      // below walking pace over the whole drive = not a car
 
 function speedMphBetween(a, b) {
@@ -54,23 +55,24 @@ function checkTiming(trail) {
   return { ok: true };
 }
 
-function checkSpeedAndAccel(trail) {
-  let prevSpeed = null;
-  for (let i = 1; i < trail.length; i++) {
-    const a = trail[i - 1];
-    const b = trail[i];
-    const mph = speedMphBetween(a, b);
-    if (mph > MAX_SPEED_MPH) {
+/**
+ * Real GPS wobbles by several meters from one reading to the next. Measured over
+ * one second, that wobble can look like 30 mph of speed change, so we never judge
+ * single hops. Instead every reading is compared with the reading at least
+ * SPEED_WINDOW_SECONDS earlier, where the wobble is a small fraction of the
+ * distance covered. A separate, very generous guard still catches a true teleport.
+ */
+function checkSpeed(trail) {
+  const windowMs = SPEED_WINDOW_SECONDS * 1000;
+  let i = -1; // newest reading that is at least one window older than reading k
+  for (let k = 0; k < trail.length; k++) {
+    if (k > 0 && speedMphBetween(trail[k - 1], trail[k]) > TELEPORT_MPH) {
       return { ok: false, reason: "Impossible speed detected." };
     }
-    if (prevSpeed !== null) {
-      const dtSec = Math.max((b.t - a.t) / 1000, 1);
-      const accel = Math.abs(mph - prevSpeed) / dtSec;
-      if (accel > MAX_ACCEL_MPH_PER_S) {
-        return { ok: false, reason: "Impossible acceleration (teleport)." };
-      }
+    while (i + 1 < k && trail[k].t - trail[i + 1].t >= windowMs) i++;
+    if (i >= 0 && speedMphBetween(trail[i], trail[k]) > MAX_SPEED_MPH) {
+      return { ok: false, reason: "Impossible speed detected." };
     }
-    prevSpeed = mph;
   }
   return { ok: true };
 }
@@ -90,7 +92,7 @@ function checkMovement(trail) {
 
 /** Run every check. Returns { ok: true } or { ok: false, reason }. */
 function validateTrail(trail) {
-  for (const check of [checkShape, checkTiming, checkSpeedAndAccel, checkMovement]) {
+  for (const check of [checkShape, checkTiming, checkSpeed, checkMovement]) {
     const r = check(trail);
     if (!r.ok) return r;
   }
