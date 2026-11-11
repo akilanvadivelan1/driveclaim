@@ -21,11 +21,15 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     private let detector = LoopDetector()      // local preview of the current loop only
     private let speech = AVSpeechSynthesizer()
+    /// Audio session calls can block, so they run here and never on the main thread.
+    private let audioQueue = DispatchQueue(label: "app.loopd.audio")
+    private var audioConfigured = false
     private let firebase: FirebaseService
 
     init(firebase: FirebaseService) {
         self.firebase = firebase
         super.init()
+        speech.delegate = self
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
         manager.activityType = .automotiveNavigation
@@ -116,8 +120,30 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
         return c
     }
 
+    /// Speaks a short update. The audio session is set up once, off the main thread,
+    /// and music is lowered while the voice talks.
     private func say(_ text: String) {
-        try? AVAudioSession.sharedInstance().setCategory(.playback, options: [.duckOthers, .interruptSpokenAudioAndMixWithOthers])
-        speech.speak(AVSpeechUtterance(string: text))
+        audioQueue.async { [weak self] in
+            guard let self else { return }
+            let session = AVAudioSession.sharedInstance()
+            if !self.audioConfigured {
+                try? session.setCategory(.playback, mode: .voicePrompt,
+                                         options: [.duckOthers, .interruptSpokenAudioAndMixWithOthers])
+                self.audioConfigured = true
+            }
+            try? session.setActive(true)
+            DispatchQueue.main.async {
+                self.speech.speak(AVSpeechUtterance(string: text))
+            }
+        }
+    }
+}
+
+extension GameStore: AVSpeechSynthesizerDelegate {
+    /// Hands the audio back so music returns to full volume.
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        audioQueue.async {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }
     }
 }
