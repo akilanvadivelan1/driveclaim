@@ -20,7 +20,8 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
     private var recorded: [TimedCoord] = []
     private let manager = CLLocationManager()
     private let detector = LoopDetector()      // local preview of the current loop only
-    private let speech = AVSpeechSynthesizer()
+    /// Created and used only on audioQueue, because starting speech touches the audio session.
+    private var speech: AVSpeechSynthesizer?
     /// Audio session calls can block, so they run here and never on the main thread.
     private let audioQueue = DispatchQueue(label: "app.loopd.audio")
     private var audioConfigured = false
@@ -29,7 +30,6 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
     init(firebase: FirebaseService) {
         self.firebase = firebase
         super.init()
-        speech.delegate = self
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
         manager.activityType = .automotiveNavigation
@@ -132,9 +132,12 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
                 self.audioConfigured = true
             }
             try? session.setActive(true)
-            DispatchQueue.main.async {
-                self.speech.speak(AVSpeechUtterance(string: text))
+            if self.speech == nil {
+                let synth = AVSpeechSynthesizer()
+                synth.delegate = self
+                self.speech = synth
             }
+            self.speech?.speak(AVSpeechUtterance(string: text))
         }
     }
 }
