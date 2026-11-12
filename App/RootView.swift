@@ -14,7 +14,7 @@ struct RootView: View {
                 case .unknown:
                     ZStack {
                         Theme.background.ignoresSafeArea()
-                        ProgressView().tint(.white)
+                        ProgressView().tint(Theme.text)
                     }
                 case .signedOut:
                     AuthView(isGate: true)

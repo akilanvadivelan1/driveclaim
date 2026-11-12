@@ -18,24 +18,12 @@ struct ContentView: View {
         ZStack {
             MapView(follow: $follow).ignoresSafeArea()
 
-            // Soft fade so the big number stays readable over the map.
-            VStack {
-                LinearGradient(colors: [Theme.background, Theme.background.opacity(0)],
-                               startPoint: .top, endPoint: .bottom)
-                    .frame(height: 300)
-                Spacer()
-            }
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-
             VStack(spacing: 0) {
-                topBar
-                scoreHeader
+                scoreboard
                 Spacer()
                 if game.isDriving && !follow { recenterButton }
                 bottomPanel
             }
-            .padding(.horizontal)
         }
         .background(Theme.background)
         .preferredColorScheme(.dark)
@@ -54,56 +42,52 @@ struct ContentView: View {
         }
     }
 
-    // MARK: Top bar
+    // MARK: Scoreboard
 
-    private var topBar: some View {
-        HStack {
-            roundButton("person.2.fill") { sheet = .friends }
+    /// Points are the whole point, so they take the top of the screen.
+    /// The number counts up when a claim lands, with the gain beside it.
+    private var scoreboard: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Points")
+                    .font(.system(size: 13))
+                    .foregroundColor(Theme.textDim)
 
-            Spacer()
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(firebase.profile.points, format: .number)
+                        .font(.system(size: 56, weight: .bold, design: .monospaced))
+                        .foregroundColor(Theme.accent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                        .contentTransition(.numericText())
+                        .animation(.easeOut(duration: 0.5), value: firebase.profile.points)
 
-            Text(game.isDriving ? "Driving" : "Ready")
-                .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(Theme.card, in: Capsule())
+                    if let gain = game.lastGainPoints {
+                        Text("+\(gain.formatted())")
+                            .font(.system(size: 22, weight: .bold, design: .monospaced))
+                            .foregroundColor(Theme.positive)
+                            .transition(.opacity)
+                    }
+                }
+                .animation(.easeOut(duration: 0.3), value: game.lastGainPoints)
 
-            Spacer()
+                Text(String(format: "%.2f square miles", max(0, firebase.profile.squareMiles)))
+                    .font(.system(size: 14))
+                    .foregroundColor(Theme.textDim)
+            }
 
-            roundButton("trophy.fill") { sheet = .leaders }
+            Spacer(minLength: 8)
+
+            HStack(spacing: 8) {
+                IconButton(systemName: "person.2") { sheet = .friends }
+                IconButton(systemName: "trophy") { sheet = .leaders }
+            }
         }
+        .padding(.horizontal, 16)
         .padding(.top, 8)
-    }
-
-    private func roundButton(_ icon: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(Theme.gradient)
-                .frame(width: 44, height: 44)
-                .background(Theme.card, in: Circle())
-        }
-    }
-
-    // MARK: Big score
-
-    private var scoreHeader: some View {
-        VStack(spacing: 2) {
-            Text("Your points")
-                .font(.headline)
-                .foregroundColor(.white)
-                .padding(.top, 20)
-
-            Text("\(firebase.profile.points)")
-                .font(.system(size: 84, weight: .heavy, design: .rounded))
-                .foregroundStyle(Theme.gradient)
-                .minimumScaleFactor(0.5)
-                .lineLimit(1)
-
-            Text(String(format: "%.2f square miles", max(0, firebase.profile.squareMiles)))
-                .font(.subheadline)
-                .foregroundColor(Theme.textDim)
-        }
+        .padding(.bottom, 14)
+        .background(Theme.background.ignoresSafeArea(edges: .top))
+        .overlay(alignment: .bottom) { Rectangle().fill(Theme.hairline).frame(height: 1) }
     }
 
     // MARK: Bottom panel
@@ -111,34 +95,24 @@ struct ContentView: View {
     private var recenterButton: some View {
         HStack {
             Spacer()
-            Button { follow = true } label: {
-                Image(systemName: "location.fill")
-                    .font(.title3)
-                    .frame(width: 48, height: 48)
-                    .background(Theme.card, in: Circle())
-            }
+            IconButton(systemName: "location") { follow = true }
         }
+        .padding(.horizontal, 12)
         .padding(.bottom, 8)
     }
 
+    private var buttonTitle: String {
+        if game.submitting { return "Sending drive" }
+        return game.isDriving ? "End drive" : "Start drive"
+    }
+
     private var bottomPanel: some View {
-        VStack(spacing: 14) {
-            if let msg = game.statusMessage {
-                Text(msg)
-                    .font(.subheadline.weight(.semibold))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(Theme.cardLight, in: Capsule())
-            }
+        VStack(spacing: 12) {
+            if let msg = game.statusMessage { statusBar(msg) }
 
-            statChips
+            statRow
 
-            if game.submitting {
-                ProgressView("Sending your drive").tint(.white)
-            }
-
-            Button(game.isDriving ? "END DRIVE" : "START DRIVE") {
+            Button(buttonTitle) {
                 if game.isDriving {
                     game.end()
                 } else {
@@ -146,48 +120,64 @@ struct ContentView: View {
                     game.start()
                 }
             }
-            .buttonStyle(PillButtonStyle(color: game.isDriving ? Theme.pink.opacity(0.9) : Theme.accent))
+            .buttonStyle(game.isDriving
+                         ? GameButtonStyle(fill: Theme.dangerFill, lip: Theme.dangerLip, text: .white)
+                         : GameButtonStyle())
             .disabled(game.submitting)
+            .opacity(game.submitting ? 0.6 : 1)
 
-            Text("Set up before you drive. Results are spoken aloud. Never touch your phone while moving.")
-                .font(.caption2)
+            Text("Set up before you drive. Never touch your phone while moving.")
+                .font(.system(size: 12))
+                .foregroundColor(Theme.textMuted)
                 .multilineTextAlignment(.center)
-                .foregroundColor(Theme.textDim)
         }
-        .card()
+        .padding(12)
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Theme.hairline, lineWidth: 1))
+        .padding(.horizontal, 12)
         .padding(.bottom, 8)
+    }
+
+    private func statusBar(_ message: String) -> some View {
+        Text(message)
+            .font(.system(size: 14, weight: .medium))
+            .foregroundColor(game.statusIsError ? Theme.danger : Theme.text)
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(Theme.raised, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     /// While driving: this drive's time and miles, updating live.
     /// Otherwise: your lifetime totals.
-    private var statChips: some View {
+    private var statRow: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
-            HStack(spacing: 10) {
-                chip(icon: "speedometer", value: "\(Int(game.speedMph))", label: "mph")
+            HStack(spacing: 0) {
+                stat("\(Int(game.speedMph))", "mph")
                 if game.isDriving, let start = game.driveStartedAt {
                     let seconds = max(0, Int(context.date.timeIntervalSince(start)))
-                    chip(icon: "clock", value: String(format: "%d:%02d", seconds / 60, seconds % 60), label: "this drive")
-                    chip(icon: "road.lanes", value: String(format: "%.2f", game.driveMiles), label: "miles this drive")
+                    stat(String(format: "%d:%02d", seconds / 60, seconds % 60), "time")
+                    stat(String(format: "%.2f", game.driveMiles), "miles")
                 } else {
-                    chip(icon: "clock", value: Display.minutes(firebase.profile.minutesDriven), label: "driven in total")
-                    chip(icon: "road.lanes", value: String(format: "%.1f", firebase.profile.milesDriven), label: "miles in total")
+                    stat(Display.minutes(firebase.profile.minutesDriven), "time driven")
+                    stat(String(format: "%.1f", firebase.profile.milesDriven), "miles driven")
                 }
             }
         }
     }
 
-    private func chip(icon: String, value: String, label: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon).foregroundStyle(Theme.gradient)
-            VStack(alignment: .leading, spacing: 0) {
-                Text(value).font(.subheadline.weight(.bold)).lineLimit(1).minimumScaleFactor(0.7)
-                Text(label).font(.caption2).foregroundColor(Theme.textDim)
-            }
-            Spacer(minLength: 0)
+    private func stat(_ value: String, _ label: String) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(.system(size: 24, weight: .medium, design: .monospaced))
+                .foregroundColor(Theme.text)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            Text(label)
+                .font(.system(size: 12))
+                .foregroundColor(Theme.textMuted)
         }
-        .padding(10)
         .frame(maxWidth: .infinity)
-        .background(Theme.cardLight, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     // MARK: Invite links
@@ -197,8 +187,10 @@ struct ContentView: View {
         firebase.pendingInvite = nil
         do {
             let friend = try await firebase.addFriend(code: invite.code)
+            game.statusIsError = false
             game.statusMessage = "You and \(friend.displayName) are now friends."
         } catch {
+            game.statusIsError = true
             game.statusMessage = error.localizedDescription
         }
     }

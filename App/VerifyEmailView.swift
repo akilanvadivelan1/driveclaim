@@ -19,10 +19,10 @@ struct VerifyEmailView: View {
 
                 Image(systemName: "envelope.badge")
                     .font(.system(size: 56))
-                    .foregroundStyle(Theme.gradient)
+                    .foregroundStyle(Theme.accent)
 
                 Text("Check your email")
-                    .font(.system(size: 32, weight: .heavy, design: .rounded))
+                    .font(.system(size: 28, weight: .bold))
 
                 Text("We sent a link to \(firebase.email ?? "your email"). Tap it, then come back here. You only need to do this once.")
                     .font(.subheadline)
@@ -38,13 +38,13 @@ struct VerifyEmailView: View {
                     Text(message)
                         .font(.footnote)
                         .multilineTextAlignment(.center)
-                        .foregroundColor(Theme.pink)
+                        .foregroundColor(Theme.text)
                         .padding(.horizontal)
                 }
 
                 VStack(spacing: 12) {
-                    Button("I VERIFIED MY EMAIL") { Task { await check() } }
-                        .buttonStyle(PillButtonStyle())
+                    Button("I verified my email") { Task { await check() } }
+                        .buttonStyle(GameButtonStyle())
                         .disabled(busy)
 
                     Button(cooldown > 0 ? "Resend in \(cooldown)s" : "Resend email") {
@@ -56,7 +56,7 @@ struct VerifyEmailView: View {
 
                     Button("Use a different account") { try? firebase.signOut() }
                         .font(.footnote.weight(.semibold))
-                        .foregroundColor(Theme.pink)
+                        .foregroundColor(Theme.textDim)
                 }
                 .padding(.horizontal)
 

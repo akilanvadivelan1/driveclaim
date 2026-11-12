@@ -9,7 +9,7 @@ enum MapFilter: Equatable {
 }
 
 /// Apple Maps (MapKit). No API key or billing account needed.
-/// Your land is violet and see-through, friends get their own colors,
+/// Your land is yellow and see-through, friends get their own colors,
 /// everyone else is soft gray, and your live trail is white.
 /// Pinch to zoom and drag to move around like any map.
 struct MapView: UIViewRepresentable {
@@ -179,9 +179,10 @@ struct MapView: UIViewRepresentable {
                 }
                 let r = MKPolygonRenderer(polygon: polygon)
                 let isOther = name == "other"
-                r.fillColor = color.withAlphaComponent(isOther ? 0.14 : 0.30)   // see-through
-                r.strokeColor = color.withAlphaComponent(isOther ? 0.5 : 0.9)
-                r.lineWidth = 2
+                let isMine = name == "mine"
+                r.fillColor = color.withAlphaComponent(isMine ? 0.34 : (isOther ? 0.12 : 0.26))   // see-through
+                r.strokeColor = color.withAlphaComponent(isOther ? 0.5 : 0.95)
+                r.lineWidth = isMine ? 2.5 : 2
                 return r
             }
             if let line = overlay as? MKPolyline {

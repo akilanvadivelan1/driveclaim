@@ -53,20 +53,15 @@ struct AuthView: View {
     private var closeRow: some View {
         HStack {
             Spacer()
-            Button { dismiss() } label: {
-                Image(systemName: "xmark")
-                    .font(.headline)
-                    .frame(width: 40, height: 40)
-                    .background(Theme.card, in: Circle())
-            }
+            IconButton(systemName: "xmark") { dismiss() }
         }
     }
 
     private var titleBlock: some View {
         VStack(spacing: 6) {
             Text("Loopd")
-                .font(.system(size: 56, weight: .heavy, design: .rounded))
-                .foregroundStyle(Theme.gradient)
+                .font(.system(size: 48, weight: .bold))
+                .foregroundStyle(Theme.accent)
             Text("Drive a loop. Claim the land.")
                 .font(.subheadline)
                 .foregroundColor(Theme.textDim)
@@ -86,14 +81,14 @@ struct AuthView: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .padding(14)
-                .background(Theme.cardLight, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Theme.raised, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
 
             SecureField("", text: $password,
                         prompt: Text(mode == .create ? "Password (8 or more characters)" : "Password")
                             .foregroundColor(Theme.textDim))
                 .textContentType(mode == .create ? .newPassword : .password)
                 .padding(14)
-                .background(Theme.cardLight, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Theme.raised, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
 
             Toggle("Remember me", isOn: $rememberMe)
                 .tint(Theme.accent)
@@ -102,7 +97,7 @@ struct AuthView: View {
             if let message {
                 Text(message)
                     .font(.footnote)
-                    .foregroundColor(Theme.pink)
+                    .foregroundColor(Theme.danger)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             if let info {
@@ -112,17 +107,17 @@ struct AuthView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            Button(mode == .create ? "CREATE ACCOUNT" : "SIGN IN") {
+            Button(mode == .create ? "Create account" : "Sign in") {
                 Task { await submit() }
             }
-            .buttonStyle(PillButtonStyle())
+            .buttonStyle(GameButtonStyle())
             .disabled(!canSubmit)
             .opacity(canSubmit ? 1 : 0.5)
 
             if mode == .signIn {
                 Button("Forgot password?") { Task { await resetPassword() } }
                     .font(.footnote.weight(.semibold))
-                    .foregroundColor(Theme.pink)
+                    .foregroundColor(Theme.accent)
                     .disabled(busy)
             }
         }
@@ -134,7 +129,7 @@ struct AuthView: View {
         VStack(spacing: 8) {
             Button("Continue as guest") { Task { await guest() } }
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(Theme.text)
                 .disabled(busy)
             Text("Guest progress is only saved on this phone. Create an account anytime to keep your land and points safe.")
                 .font(.caption)

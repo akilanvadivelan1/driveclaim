@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseCore
+import UIKit
 
 @main
 struct LoopdApp: App {
@@ -14,6 +15,13 @@ struct LoopdApp: App {
         if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
             FirebaseApp.configure()
         }
+
+        // Segmented pickers: yellow when selected, quiet otherwise.
+        let seg = UISegmentedControl.appearance()
+        seg.selectedSegmentTintColor = UIColor(Theme.accent)
+        seg.backgroundColor = UIColor(Theme.raised)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor(Theme.onAccent)], for: .selected)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor(Theme.textDim)], for: .normal)
 
         let fb = FirebaseService()
         _firebase = StateObject(wrappedValue: fb)

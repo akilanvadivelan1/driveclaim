@@ -1,35 +1,68 @@
 import SwiftUI
 import UIKit
 
-/// Dark, simple look: deep navy-purple surfaces, violet accent, pink highlights.
+/// Night asphalt, road-paint yellow. Flat colors only: no gradients, no glows.
+///
+/// Concept: yellow is you. Your land, your score and the start button are yellow,
+/// and nobody else gets that color. Everything else is a neutral you can beat.
 enum Theme {
-    static let background = Color(red: 0.12, green: 0.10, blue: 0.21)   // #1F1A36
-    static let card       = Color(red: 0.17, green: 0.15, blue: 0.27)   // #2B2745
-    static let cardLight  = Color(red: 0.22, green: 0.19, blue: 0.34)
-    static let accent     = Color(red: 0.48, green: 0.36, blue: 1.00)   // violet
-    static let pink       = Color(red: 0.96, green: 0.56, blue: 0.69)
-    static let textDim    = Color.white.opacity(0.55)
+    // Surfaces: warm graphite, like asphalt under street lights.
+    static let background = Color(hex: 0x161513)
+    static let card       = Color(hex: 0x1C1A18)
+    static let raised     = Color(hex: 0x262421)
+    static let hairline   = Color(hex: 0xEFE9DE).opacity(0.08)
 
-    static let gradient = LinearGradient(
-        colors: [accent, pink], startPoint: .topLeading, endPoint: .bottomTrailing)
+    // Three text roles.
+    static let text      = Color(hex: 0xEFE9DE)
+    static let textDim   = Color(hex: 0xAAA398)
+    static let textMuted = Color(hex: 0x8A847A)
 
-    // Map overlay colors (UIKit). Yours is violet, friends get their own color.
-    static let mineUI = UIColor(red: 0.48, green: 0.36, blue: 1.00, alpha: 1)
+    // Road-paint yellow, with dark text on top.
+    static let accent     = Color(hex: 0xFFC72C)
+    static let accentLip  = Color(hex: 0xB58A0A)   // the solid edge under the game button
+    static let onAccent   = Color(hex: 0x1A1500)
+
+    // Status colors.
+    static let danger     = Color(hex: 0xF2595E)   // text on dark surfaces
+    static let dangerFill = Color(hex: 0xD93A40)   // button fill, white text on top
+    static let dangerLip  = Color(hex: 0x8F2226)
+    static let positive   = Color(hex: 0x4CC38A)
+
+    // Map overlays (UIKit). Yours is yellow, each friend gets a color, everyone else is grey.
+    static let mineUI = UIColor(hex: 0xFFC72C)
     static let friendPaletteUI: [UIColor] = [
-        UIColor(red: 0.96, green: 0.56, blue: 0.69, alpha: 1),   // pink
-        UIColor(red: 0.30, green: 0.80, blue: 0.78, alpha: 1),   // teal
-        UIColor(red: 0.98, green: 0.74, blue: 0.35, alpha: 1),   // amber
-        UIColor(red: 0.45, green: 0.72, blue: 0.98, alpha: 1)    // sky
+        UIColor(hex: 0x3DCBD9),   // cyan
+        UIColor(hex: 0xFF8A4C),   // orange
+        UIColor(hex: 0x6AA7FF),   // sky blue
+        UIColor(hex: 0xA6E22E)    // lime
     ]
-    static let otherUI = UIColor(white: 0.75, alpha: 1)           // everyone else
+    static let otherUI = UIColor(white: 0.78, alpha: 1)
 }
 
-/// Rounded dark card used across screens.
+extension Color {
+    init(hex: UInt32) {
+        self.init(red: Double((hex >> 16) & 0xFF) / 255,
+                  green: Double((hex >> 8) & 0xFF) / 255,
+                  blue: Double(hex & 0xFF) / 255)
+    }
+}
+
+extension UIColor {
+    convenience init(hex: UInt32) {
+        self.init(red: CGFloat((hex >> 16) & 0xFF) / 255,
+                  green: CGFloat((hex >> 8) & 0xFF) / 255,
+                  blue: CGFloat(hex & 0xFF) / 255,
+                  alpha: 1)
+    }
+}
+
+/// A flat card with a hairline edge.
 struct CardStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(16)
-            .background(Theme.card, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.hairline, lineWidth: 1))
     }
 }
 
@@ -37,16 +70,80 @@ extension View {
     func card() -> some View { modifier(CardStyle()) }
 }
 
-/// Big pill button in the violet accent.
-struct PillButtonStyle: ButtonStyle {
-    var color: Color = Theme.accent
+/// The big game button. A solid face sits on a solid lip, and pressing it pushes the
+/// face down onto the lip, like a physical arcade button.
+struct GameButtonStyle: ButtonStyle {
+    var fill: Color = Theme.accent
+    var lip: Color = Theme.accentLip
+    var text: Color = Theme.onAccent
+    var height: CGFloat = 60
+
+    let depth: CGFloat = 5
+    let radius: CGFloat = 12
+
+    func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
+        return configuration.label
+            .font(.system(size: 20, weight: .bold))
+            .foregroundColor(text)
+            .frame(maxWidth: .infinity, minHeight: height)
+            .background(fill, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .offset(y: pressed ? depth : 0)
+            .background(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .fill(lip)
+                    .offset(y: depth)
+            )
+            .padding(.bottom, depth)
+            .animation(.easeOut(duration: 0.08), value: pressed)
+    }
+}
+
+/// Smaller buttons for forms and settings.
+struct SmallButtonStyle: ButtonStyle {
+    enum Kind { case primary, secondary, danger }
+    var kind: Kind = .primary
+
+    private var background: Color {
+        switch kind {
+        case .primary: return Theme.accent
+        case .secondary: return Theme.raised
+        case .danger: return Theme.dangerFill
+        }
+    }
+
+    private var foreground: Color {
+        switch kind {
+        case .primary: return Theme.onAccent
+        case .secondary: return Theme.text
+        case .danger: return .white
+        }
+    }
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.title3.weight(.heavy))
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity, minHeight: 64)   // big target, easy to hit
-            .background(color, in: Capsule())
-            .opacity(configuration.isPressed ? 0.8 : 1)
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundColor(foreground)
+            .padding(.horizontal, 16)
+            .frame(minHeight: 40)
+            .background(background, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .opacity(configuration.isPressed ? 0.75 : 1)
+    }
+}
+
+/// A square icon button for the screen corners.
+struct IconButton: View {
+    var systemName: String
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundColor(Theme.text)
+                .frame(width: 44, height: 44)
+                .background(Theme.raised, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
     }
 }
 
@@ -60,15 +157,16 @@ struct LegendView: View {
             dot(Color(Theme.friendPaletteUI[0]), "Friends")
             if filter == .everyone { dot(Color(Theme.otherUI), "Everyone else") }
         }
-        .font(.caption2.weight(.semibold))
+        .font(.system(size: 12, weight: .medium))
+        .foregroundColor(Theme.text)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Theme.card.opacity(0.92), in: Capsule())
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private func dot(_ color: Color, _ label: String) -> some View {
-        HStack(spacing: 5) {
-            Circle().fill(color.opacity(0.9)).frame(width: 9, height: 9)
+        HStack(spacing: 6) {
+            Circle().fill(color).frame(width: 9, height: 9)
             Text(label)
         }
     }

@@ -62,14 +62,9 @@ struct FriendsView: View {
     private var header: some View {
         HStack {
             Text("Friends")
-                .font(.system(size: 34, weight: .heavy, design: .rounded))
+                .font(.system(size: 30, weight: .bold))
             Spacer()
-            Button { dismiss() } label: {
-                Image(systemName: "xmark")
-                    .font(.headline)
-                    .frame(width: 40, height: 40)
-                    .background(Theme.card, in: Circle())
-            }
+            IconButton(systemName: "xmark") { dismiss() }
         }
     }
 
@@ -82,8 +77,7 @@ struct FriendsView: View {
                 Text("Signed in as \(firebase.email ?? "your account"). Your land, points and friends are saved to this account.")
                     .font(.caption).foregroundColor(Theme.textDim)
                 Button("Sign out") { confirmSignOut = true }
-                    .buttonStyle(.bordered)
-                    .tint(Theme.pink)
+                    .buttonStyle(SmallButtonStyle(kind: .secondary))
                     .disabled(game.isDriving)
                 if game.isDriving {
                     Text("End your drive before signing out.")
@@ -93,14 +87,13 @@ struct FriendsView: View {
                 Text("You are playing as a guest, so your progress is only saved on this phone. Create an account to keep it if you change phones or delete the app.")
                     .font(.caption).foregroundColor(Theme.textDim)
                 Button("Create account or sign in") { showAuth = true }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.accent)
+                    .buttonStyle(SmallButtonStyle())
             default:
                 Text("Accounts turn on once Firebase is set up.")
                     .font(.caption).foregroundColor(Theme.textDim)
             }
 
-            if let accountMessage { Text(accountMessage).font(.caption).foregroundColor(Theme.pink) }
+            if let accountMessage { Text(accountMessage).font(.caption).foregroundColor(Theme.danger) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .card()
@@ -116,13 +109,12 @@ struct FriendsView: View {
                     .textInputAutocapitalization(.words)
                     .autocorrectionDisabled()
                     .padding(12)
-                    .background(Theme.cardLight, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(Theme.raised, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 Button("Save") { Task { await saveName() } }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.accent)
+                    .buttonStyle(SmallButtonStyle())
                     .disabled(busy || name.trimmingCharacters(in: .whitespaces).count < 2)
             }
-            if let nameMessage { Text(nameMessage).font(.caption).foregroundColor(Theme.pink) }
+            if let nameMessage { Text(nameMessage).font(.caption).foregroundColor(nameMessage == "Saved." ? Theme.positive : Theme.danger) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .card()
@@ -142,15 +134,15 @@ struct FriendsView: View {
                     Spacer()
                     ShareLink(item: shareText) {
                         Label("Share", systemImage: "square.and.arrow.up")
-                            .font(.subheadline.weight(.semibold))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
-                            .background(Theme.accent, in: Capsule())
-                            .foregroundColor(.white)
+                            .font(.system(size: 15, weight: .semibold))
+                            .padding(.horizontal, 16)
+                            .frame(minHeight: 40)
+                            .background(Theme.accent, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .foregroundColor(Theme.onAccent)
                     }
                 }
                 .padding(12)
-                .background(Theme.cardLight, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Theme.raised, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             } else {
                 Text(firebase.isConfigured ? "Getting your code..." : "Connect Firebase to get an invite code.")
                     .font(.subheadline).foregroundColor(Theme.textDim)
@@ -170,13 +162,12 @@ struct FriendsView: View {
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled()
                     .padding(12)
-                    .background(Theme.cardLight, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(Theme.raised, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 Button("Add") { Task { await addFriend() } }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.accent)
+                    .buttonStyle(SmallButtonStyle())
                     .disabled(busy || codeInput.trimmingCharacters(in: .whitespaces).count < 6)
             }
-            if let addMessage { Text(addMessage).font(.caption).foregroundColor(Theme.pink) }
+            if let addMessage { Text(addMessage).font(.caption).foregroundColor(addMessage.hasPrefix("You and") ? Theme.positive : Theme.danger) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .card()

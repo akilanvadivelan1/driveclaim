@@ -1,6 +1,7 @@
 import Foundation
 import CoreLocation
 import AVFoundation
+import UIKit
 import TerritoryCore
 
 /// Owns GPS, records the drive, submits it to the server, and speaks results.
@@ -12,6 +13,9 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var speedMph: Double = 0
     @Published var isDriving = false
     @Published var statusMessage: String?
+    @Published var statusIsError = false
+    /// Points from the drive that just finished, shown beside the score for a few seconds.
+    @Published var lastGainPoints: Int?
     @Published var submitting = false
     /// Live numbers for the drive in progress.
     @Published var driveMiles: Double = 0
@@ -46,6 +50,10 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
         recorded = []
         driveMiles = 0
         driveStartedAt = Date()
+        statusMessage = nil
+        statusIsError = false
+        lastGainPoints = nil
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         manager.startUpdatingLocation()
         isDriving = true
         say("Territory started. Drive a loop to claim land. Loop through a rival to steal theirs.")
@@ -70,10 +78,19 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
                 ? String(format: " You took %.2f square miles from rivals.", r.stolenSquareMiles)
                 : ""
             let msg = base + steal
+            statusIsError = false
             statusMessage = msg
+            lastGainPoints = r.claimedPoints > 0 ? r.claimedPoints : nil
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
             say(msg)
+            Task { [weak self] in
+                try? await Task.sleep(nanoseconds: 6_000_000_000)
+                self?.lastGainPoints = nil
+            }
         } catch {
+            statusIsError = true
             statusMessage = "Drive rejected: \(error.localizedDescription)"
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
             say("Your drive could not be claimed.")
         }
     }

@@ -69,22 +69,12 @@ struct LeaderboardView: View {
     private var header: some View {
         HStack {
             Text(section == .friends ? "Friends" : "Nation")
-                .font(.system(size: 34, weight: .heavy, design: .rounded))
+                .font(.system(size: 30, weight: .bold))
             Spacer()
             if section == .friends {
-                Button { showFriends = true } label: {
-                    Image(systemName: "person.badge.plus")
-                        .font(.headline)
-                        .frame(width: 40, height: 40)
-                        .background(Theme.card, in: Circle())
-                }
+                IconButton(systemName: "person.badge.plus") { showFriends = true }
             }
-            Button { dismiss() } label: {
-                Image(systemName: "xmark")
-                    .font(.headline)
-                    .frame(width: 40, height: 40)
-                    .background(Theme.card, in: Circle())
-            }
+            IconButton(systemName: "xmark") { dismiss() }
         }
         .padding(.top, 8)
     }
@@ -94,7 +84,7 @@ struct LeaderboardView: View {
         if layout == .map {
             mapContent
         } else if loading {
-            ProgressView().tint(.white).frame(maxHeight: .infinity)
+            ProgressView().tint(Theme.text).frame(maxHeight: .infinity)
         } else if let error {
             emptyState(icon: "wifi.slash", title: "Could not load", detail: error)
         } else if section == .friends && rows.count <= 1 {
@@ -103,7 +93,7 @@ struct LeaderboardView: View {
                 emptyState(icon: "person.2", title: "No friends yet",
                            detail: "Send your invite link and see who covers the most land.")
                 Button("Invite friends") { showFriends = true }
-                    .buttonStyle(PillButtonStyle())
+                    .buttonStyle(GameButtonStyle())
             }
         } else if rows.isEmpty {
             emptyState(icon: "map", title: "No claims yet", detail: "Be the first to claim land here.")
@@ -128,51 +118,47 @@ struct LeaderboardView: View {
     private func rowView(_ row: FirebaseService.LeaderboardRow) -> some View {
         HStack(spacing: 14) {
             Text("\(row.rank)")
-                .font(.system(.title3, design: .rounded).weight(.heavy))
-                .foregroundStyle(row.rank <= 3 ? AnyShapeStyle(Theme.gradient) : AnyShapeStyle(Theme.textDim))
+                .font(.system(size: 20, weight: .bold, design: .monospaced))
+                .foregroundColor(row.rank <= 3 ? Theme.accent : Theme.textMuted)
                 .frame(width: 34)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(row.isMe ? "You" : name(for: row))
-                    .font(.headline)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(row.isMe ? Theme.accent : Theme.text)
                     .lineLimit(1)
-                HStack(spacing: 6) {
-                    Image(systemName: "clock").font(.caption2)
-                    Text(Display.minutes(row.minutesDriven) + " driven")
-                    if let st = row.state, section == .nation {
-                        Text("· \(st)")
-                    }
-                }
-                .font(.caption)
-                .foregroundColor(Theme.textDim)
+                Text(minutesLine(for: row))
+                    .font(.system(size: 13))
+                    .foregroundColor(Theme.textDim)
             }
 
             Spacer()
 
             VStack(alignment: .trailing, spacing: 3) {
-                Text("\(row.points) pts")
-                    .font(.system(.title3, design: .rounded).weight(.bold))
-                    .monospacedDigit()
+                Text("\(row.points.formatted()) pts")
+                    .font(.system(size: 18, weight: .bold, design: .monospaced))
+                    .foregroundColor(Theme.text)
                 Text(String(format: "%.2f sq mi", row.squareMiles))
-                    .font(.caption)
+                    .font(.system(size: 13))
                     .foregroundColor(Theme.textDim)
             }
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(row.isMe ? Theme.cardLight : Theme.card)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(row.isMe ? Theme.accent : .clear, lineWidth: 1.5)
-        )
+        .background(row.isMe ? Theme.raised : Theme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.hairline, lineWidth: 1))
+    }
+
+    /// "45 min driven", plus the state on the national board.
+    private func minutesLine(for row: FirebaseService.LeaderboardRow) -> String {
+        var line = Display.minutes(row.minutesDriven) + " driven"
+        if let st = row.state, section == .nation { line += " (\(st))" }
+        return line
     }
 
     // Works on iOS 16 (ContentUnavailableView needs iOS 17).
     private func emptyState(icon: String, title: String, detail: String) -> some View {
         VStack(spacing: 8) {
-            Image(systemName: icon).font(.largeTitle).foregroundStyle(Theme.gradient)
+            Image(systemName: icon).font(.largeTitle).foregroundStyle(Theme.accent)
             Text(title).font(.headline)
             Text(detail).font(.subheadline).foregroundColor(Theme.textDim).multilineTextAlignment(.center)
         }
