@@ -1,12 +1,18 @@
 import SwiftUI
 
-/// Decides what to show first: a sign-in screen, or the game.
+/// Decides what to show first: the age question, a sign-in screen, or the game.
 struct RootView: View {
     @EnvironmentObject var firebase: FirebaseService
+    @AppStorage(AgeGate.confirmedKey) private var ageConfirmed = false
+    @AppStorage(AgeGate.blockedKey) private var ageBlocked = false
 
     var body: some View {
         Group {
-            if !firebase.isConfigured {
+            if ageBlocked {
+                UnderAgeView()
+            } else if !ageConfirmed {
+                AgeGateView()
+            } else if !firebase.isConfigured {
                 // No Firebase yet, so just show the game for previewing.
                 ContentView()
             } else {

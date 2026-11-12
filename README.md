@@ -34,6 +34,15 @@ Your progress (land, points, friends, name) belongs to your account, not to the 
 - You can reset a forgotten password from the sign-in screen.
 - Sign out is under Friends > Account. It is disabled while you are driving.
 
+### Age check
+
+The first time the app opens, before sign-in, it asks "Are you 13 or older?". Both answers look the same, so neither one is pushed.
+
+- Yes lets you continue to sign in or play as a guest.
+- No ends it. The app shows a short message and never asks again on that phone, so the answer cannot be changed by trying again. If a guest or account was already on the phone, it is signed out.
+- The answer is stored on the phone only. Deleting and reinstalling the app asks again, and the server does not check it. A reinstall-proof, server-checked age gate would need more work.
+- This is a basic gate and not legal advice. Before a public launch, get a privacy policy and have a lawyer look at the rules for children's data (COPPA in the U.S.), because the game collects location.
+
 ### Email verification and Remember me
 
 - After you create an account, Firebase emails you a **verification link**. Tap it once and you are done. The app notices on its own and moves on.
