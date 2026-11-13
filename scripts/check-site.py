@@ -143,26 +143,42 @@ GENERATED = {"/logo.png", "/favicon.png", "/apple-touch-icon.png"}   # made by s
 known = {"/": "index.html"}
 for g in GENERATED:
     known[g] = g
-for f in pages:
-    known["/" + f[:-5]] = f
 for f in os.listdir(SITE):
     known["/" + f] = f
-bad_links = []
+
+
+def resolve(page_name, href):
+    """Where a relative link goes, as a path from the site's root, plus its #fragment."""
+    path, _, frag = href.partition("#")
+    if path == "":
+        return "/" + page_name, frag
+    if path in (".", "./"):
+        return "/", frag
+    if path.startswith("./"):
+        path = path[2:]
+    return "/" + path, frag
+
+
+problems = []
 for name in pages:
     p = parse(name)
-    for href in p.links:
+    refs = list(p.links) + [i.get("src", "") for i in p.imgs]
+    for href in refs:
         if href.startswith(("mailto:", "http://", "https://", "data:")):
             continue
-        target = href.split("#")[0] or ("/" + name)
+        if href.startswith("/") or ".." in href:
+            problems.append(f"{name}: '{href}' starts from the root of the domain, so it breaks on GitHub Pages. Use a relative link")
+            continue
+        target, frag = resolve(name, href)
         if target not in known:
-            bad_links.append(f"{name} -> {href}")
-        if "#" in href and target in ("/", "/" + name) and href.split("#")[1] not in p.ids:
-            bad_links.append(f"{name} -> {href} (no element with that id)")
-if bad_links:
-    for b in bad_links:
-        fail("broken link: " + b)
+            problems.append(f"{name} -> {href} does not exist")
+        elif frag and known.get(target) == name and frag not in p.ids:
+            problems.append(f"{name} -> {href} has no element with that id")
+if problems:
+    for b in problems:
+        fail("link: " + b)
 else:
-    ok("every link points at something that exists")
+    ok("every link is relative and points at something that exists, so the site works at the root and under /driveclaim/")
 
 assets_missing = [f for f in ("logo.png", "favicon.png", "apple-touch-icon.png") if not os.path.exists(os.path.join(SITE, f))]
 if assets_missing:

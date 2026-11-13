@@ -73,7 +73,12 @@ For the server to remove the sign-in itself, its service account needs the Fireb
 
 ### The website
 
-The site lives in `Firebase/hosting` and is published to `https://loopd-e2ba1.web.app`. It has a home page, the privacy policy (`/privacy`) and a not-found page. It follows the same look as the app: night asphalt, with yellow meaning you.
+The site lives in `Firebase/hosting`. The same folder is published in two places, so either address always shows the same site:
+
+- **Firebase:** `https://loopd-e2ba1.web.app`
+- **GitHub Pages:** `https://akilanvadivelan1.github.io/driveclaim/`
+
+Every link in the pages is relative, which is what lets one set of files work at the root of a domain and under `/driveclaim/`. `scripts/check-site.py` fails if a root-relative link sneaks in. It has a home page, the privacy policy (`/privacy`) and a not-found page. It follows the same look as the app: night asphalt, with yellow meaning you.
 
 - **No gradients, glows, scripts or inline styles.** The site's security headers (in `Firebase/firebase.json`) block scripts and inline styles, so the checker below fails if one slips in.
 - **The example map tells the truth.** It shows a loop of 30 blocks (an eighth of a mile each), which is 0.47 square miles and 469 points, with 6 blocks taken from a friend. `scripts/check-site.py` works those numbers out from the drawing and from the server's real scoring rate, and fails if the page disagrees.
@@ -83,6 +88,15 @@ The site lives in `Firebase/hosting` and is published to `https://loopd-e2ba1.we
         bash scripts/add-logo.sh ~/Downloads/YOUR-LOGO-FILE   # also makes the site's logo, tab icon and home-screen icon
         bash scripts/check-before-publish.sh
         cd Firebase && npx -y firebase-tools@latest deploy --only hosting
+
+- **GitHub Pages setup (one time).**
+  1. Make the three logo files with `bash scripts/add-logo.sh ...` (see above). They appear in `Firebase/hosting`.
+  2. Put them on GitHub, either with `git add Firebase/hosting/*.png && git commit -m "Add site logo" && git push`, or on github.com by opening the `Firebase/hosting` folder, choosing Add file, then Upload files.
+  3. On github.com open Settings, then Pages, and under Build and deployment set Source to **GitHub Actions**.
+  4. The workflow in `.github/workflows/pages.yml` publishes the folder whenever something in `Firebase/hosting` changes on `main`. You can also run it by hand from the Actions tab.
+- **The workflow refuses to publish an unfinished site.** It runs `scripts/check-before-publish.sh` first, so missing logo files, leftover placeholders or failed site checks stop it, and the Actions tab says why.
+- **Only the website folder is published.** The app, the server code and the files in `docs/` are not part of the site.
+- **This repository is public,** so anyone can read the code and the docs. A scan of all 30 commits found no keys, tokens or credential files. What is public: the Firebase project name and number, your Apple Team ID, and your contact email. To keep the code private, publish the site from a separate public repository instead, because GitHub Pages on a private repository needs a paid plan.
 
 - **When your TestFlight public link exists,** swap the "Ask for a beta invite" button for it. Use your real link in place of the made-up one below:
 
