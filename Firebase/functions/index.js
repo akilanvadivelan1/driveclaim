@@ -9,6 +9,7 @@
  *   getMyInvite     returns (and creates) your invite code
  *   addFriend       adds a friend from their invite code
  *   setDisplayName  sets the name others see
+ *   deleteAccount   removes the player's data and their sign-in
  */
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
@@ -17,6 +18,7 @@ const { validateTrail } = require("./anticheat");
 const { stateForPoint } = require("./usstate");
 const T = require("./territory");
 const S = require("./social");
+const { deletePlayerData } = require("./account");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -260,4 +262,30 @@ exports.setDisplayName = onCall(async (request) => {
   if (!result.ok) throw new HttpsError("invalid-argument", result.reason);
   await db.collection("players").doc(uid).set({ displayName: result.name }, { merge: true });
   return { displayName: result.name };
+});
+
+// ---------------------------------------------------------------------------
+// deleteAccount
+// ---------------------------------------------------------------------------
+/**
+ * Apple requires an in-app way to delete an account. This removes everything stored
+ * about the player and then the sign-in itself. It does not require a verified email,
+ * so someone who never finished signing up can still leave.
+ */
+exports.deleteAccount = onCall(async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+  const uid = request.auth.uid;
+
+  const deleted = await deletePlayerData(db, uid);
+
+  // Needs the "Firebase Authentication Admin" role on the function's service account.
+  // If that is missing, the app falls back to deleting the sign-in from the phone.
+  let authDeleted = false;
+  try {
+    await admin.auth().deleteUser(uid);
+    authDeleted = true;
+  } catch (e) {
+    console.error("Could not delete the sign-in:", e.code || e.message);
+  }
+  return { deleted, authDeleted };
 });

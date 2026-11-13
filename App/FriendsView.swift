@@ -16,6 +16,8 @@ struct FriendsView: View {
     @State private var showAuth = false
     @State private var confirmSignOut = false
     @State private var accountMessage: String?
+    @State private var confirmDelete = false
+    @State private var deleting = false
 
     private var shareText: String {
         guard let code = inviteCode else { return "" }
@@ -93,10 +95,36 @@ struct FriendsView: View {
                     .font(.caption).foregroundColor(Theme.textDim)
             }
 
+            if firebase.authState == .signedIn || firebase.authState == .guest {
+                Button(deleting ? "Deleting" : "Delete account") { confirmDelete = true }
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(Theme.danger)
+                    .disabled(game.isDriving || deleting)
+                    .padding(.top, 4)
+                    .confirmationDialog("Delete your account?", isPresented: $confirmDelete, titleVisibility: .visible) {
+                        Button("Delete everything", role: .destructive) { Task { await deleteAccount() } }
+                        Button("Cancel", role: .cancel) { }
+                    } message: {
+                        Text("This permanently deletes your account, your land, your points and your friend connections. It cannot be undone.")
+                    }
+            }
+
             if let accountMessage { Text(accountMessage).font(.caption).foregroundColor(Theme.danger) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .card()
+    }
+
+    @MainActor
+    private func deleteAccount() async {
+        deleting = true
+        accountMessage = nil
+        defer { deleting = false }
+        do {
+            try await firebase.deleteAccount()
+        } catch {
+            accountMessage = "Could not delete your account: " + error.localizedDescription
+        }
     }
 
     private var nameCard: some View {

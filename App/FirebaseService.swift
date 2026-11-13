@@ -361,6 +361,16 @@ final class FirebaseService: ObservableObject {
             displayName: d["displayName"] as? String ?? "Your friend")
     }
 
+    /// Deletes the account and everything stored about it. The server removes the data and the
+    /// sign-in. If it could not remove the sign-in, this tries from the phone, then signs out.
+    func deleteAccount() async throws {
+        let d = try await call("deleteAccount")
+        if (d["authDeleted"] as? Bool) != true, let user = Auth.auth().currentUser {
+            try? await user.delete()
+        }
+        try? signOut()
+    }
+
     func setDisplayName(_ name: String) async throws -> String {
         let d = try await call("setDisplayName", ["name": name])
         return d["displayName"] as? String ?? name

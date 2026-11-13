@@ -29,17 +29,19 @@ const verified = { uid: "u3", token: { firebase: { sign_in_provider: "password" 
 const call = (name, auth, data) => fns[name].run({ auth, data, rawRequest: {} });
 
 (async () => {
-  console.log("All five functions are exported:");
-  for (const n of ["submitDrive", "leaderboard", "getMyInvite", "addFriend", "setDisplayName"]) {
+  console.log("All six functions are exported:");
+  for (const n of ["submitDrive", "leaderboard", "getMyInvite", "addFriend", "setDisplayName", "deleteAccount"]) {
     assert.strictEqual(typeof fns[n].run, "function", n);
   }
-  ok("submitDrive, leaderboard, getMyInvite, addFriend, setDisplayName");
+  ok("submitDrive, leaderboard, getMyInvite, addFriend, setDisplayName, deleteAccount");
 
   console.log("Sign-in and verification checks:");
   for (const n of ["submitDrive", "leaderboard", "getMyInvite", "addFriend", "setDisplayName"]) {
     assert.strictEqual(await codeOf(call(n, null, {})), "unauthenticated", n + " signed out");
   }
   ok("every function rejects a signed-out caller");
+  assert.strictEqual(await codeOf(call("deleteAccount", null, {})), "unauthenticated");
+  ok("deleteAccount rejects a signed-out caller too");
 
   for (const n of ["submitDrive", "leaderboard", "getMyInvite", "addFriend", "setDisplayName"]) {
     assert.strictEqual(await codeOf(call(n, unverified, {})), "permission-denied", n + " unverified");

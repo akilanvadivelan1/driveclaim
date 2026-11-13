@@ -63,6 +63,27 @@ The first time the app opens, before sign-in, it asks "Are you 13 or older?". Bo
 - The answer is stored on the phone only. Deleting and reinstalling the app asks again, and the server does not check it. A reinstall-proof, server-checked age gate would need more work.
 - This is a basic gate and not legal advice. Before a public launch, get a privacy policy and have a lawyer look at the rules for children's data (COPPA in the U.S.), because the game collects location.
 
+### Deleting an account
+
+Friends > Account > Delete account. After a confirmation it removes the player's land, points, leaderboard rows, friend links, invite codes and name, and then their sign-in. It works for guests and for email accounts, and it does not need a verified email. It is blocked while a drive is in progress.
+
+For the server to remove the sign-in itself, its service account needs the Firebase Authentication Admin role. If it does not have it, the data is still deleted and the app removes the sign-in from the phone instead. To grant the role, run this once in Cloud Shell:
+
+    gcloud projects add-iam-policy-binding loopd-e2ba1 --member=serviceAccount:792316187993-compute@developer.gserviceaccount.com --role=roles/firebaseauth.admin
+
+### Going public
+
+1. Fill in your details and publish the privacy page (see `docs/testflight/test-information.md` for the whole checklist):
+
+        bash scripts/check-before-publish.sh
+        cd Firebase && npx -y firebase-tools@latest deploy --only hosting
+
+   The privacy page is then at `https://loopd-e2ba1.web.app/privacy`. Use that address as the Privacy Policy URL in App Store Connect, and `https://loopd-e2ba1.web.app` as the Support URL.
+2. Deploy the new `deleteAccount` function (`npx -y firebase-tools@latest deploy --only functions`). A new function may need the public-access step from earlier, run in Cloud Shell:
+
+        gcloud run services add-iam-policy-binding deleteaccount --region=us-central1 --member=allUsers --role=roles/run.invoker --project=loopd-e2ba1
+3. Upload a build, create an External group in TestFlight and turn on its public link.
+
 ### Email verification and Remember me
 
 - After you create an account, Firebase emails you a **verification link**. Tap it once and you are done. The app notices on its own and moves on.
@@ -75,7 +96,6 @@ The first time the app opens, before sign-in, it asks "Are you 13 or older?". Bo
 
 Not done yet:
 - Sign in with Apple and Google. Sign in with Apple needs a paid Apple Developer membership for its capability, and the app does not need it while email is the only login option.
-- **Delete my account.** Apple requires an in-app way to delete your account and data before an app that creates accounts can be released on the App Store. Plan to add this before submitting.
 
 ## Friends and leaderboards
 

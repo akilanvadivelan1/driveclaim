@@ -13,9 +13,19 @@
         "*.log",
         "test.js",
         "test-territory.js",
+        "test-account.js",
         "test-handlers.js"
       ],
       "runtime": "nodejs22"
     }
-  ]
+  ],
+  "hosting": {
+    "public": "hosting",
+    "cleanUrls": true,
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
 }

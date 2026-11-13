@@ -12,6 +12,6 @@
   },
   "private": true,
   "scripts": {
-    "test": "node test.js && node test-territory.js && node test-handlers.js"
+    "test": "node test.js && node test-territory.js && node test-account.js && node test-handlers.js"
   }
 }
