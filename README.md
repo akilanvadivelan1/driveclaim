@@ -71,6 +71,19 @@ For the server to remove the sign-in itself, its service account needs the Fireb
 
     gcloud projects add-iam-policy-binding loopd-e2ba1 --member=serviceAccount:792316187993-compute@developer.gserviceaccount.com --role=roles/firebaseauth.admin
 
+### Business model
+
+Loopd is free. There is no paywall, subscription or advertising. Paid-upfront apps get very few downloads, and this game needs friends to join. Extras such as cosmetics or stats could come later, but never points, land or privacy.
+
+### Shipping to TestFlight
+
+Follow `docs/testflight/ship-it.md`. Two helper scripts:
+
+    bash scripts/set-team.sh               # saves your Apple Team ID so Xcode stops forgetting it
+    bash scripts/preflight-testflight.sh   # checks the icon, bundle ID, Firebase file, location text and privacy manifest
+
+The app includes `App/PrivacyInfo.xcprivacy`, which Apple requires. It declares the one system feature the app uses that needs a reason (saved settings) and the data the app collects.
+
 ### Going public
 
 1. Fill in your details and publish the privacy page (see `docs/testflight/test-information.md` for the whole checklist):
