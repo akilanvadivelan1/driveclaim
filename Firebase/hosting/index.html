@@ -3,25 +3,90 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Loopd</title>
-  <style>
-    :root { color-scheme: dark; }
-    body { margin: 0; background: #161513; color: #efe9de; font: 17px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    main { max-width: 560px; margin: 0 auto; padding: 72px 20px; }
-    h1 { font-size: 44px; margin: 0 0 8px; color: #ffc72c; }
-    p { color: #d9d3c8; }
-    a { color: #ffc72c; }
-    .small { color: #aaa398; font-size: 15px; }
-  </style>
+  <title>Loopd: drive a loop, claim the land</title>
+  <meta name="description" content="Loopd is a free iPhone driving game. The land inside every loop you drive becomes yours, worth 1,000 points per square mile. Take land from friends and climb the leaderboards.">
+  <meta name="theme-color" content="#161513">
+  <meta property="og:title" content="Loopd: drive a loop, claim the land">
+  <meta property="og:description" content="A free iPhone driving game. The land inside every loop you drive becomes yours, worth 1,000 points per square mile.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-<main>
-  <h1>Loopd</h1>
-  <p>Drive a loop. Claim the land. Loopd is an iPhone game where the land inside every loop you drive becomes yours, and every square mile is worth 1,000 points. Invite friends, take land from each other, and climb the leaderboards.</p>
-  <p class="small">Please do not use your phone while driving. Set up before you start and let the voice updates do the work. Loopd is for ages 13 and up.</p>
-  <h2>Support</h2>
-  <p>Questions or problems: <a href="mailto:akilanvadivelan1@gmail.com">akilanvadivelan1@gmail.com</a></p>
-  <p><a href="/privacy">Privacy policy</a></p>
+<a class="skip" href="#main">Skip to the content</a>
+<header class="wrap top">
+  <a class="brand" href="/"><img src="/logo.png" width="32" height="32" alt="">Loopd</a>
+  <nav><a href="/privacy">Privacy</a></nav>
+</header>
+
+<main id="main" class="wrap">
+  <section class="hero">
+    <div>
+      <h1><span>Drive a loop.</span> <span>Claim the land.</span></h1>
+      <p class="lede">Loopd is an iPhone game. The area inside every loop you drive becomes your territory, worth 1,000 points for each square mile. Close a loop over a friend's land and the overlap becomes yours.</p>
+      <a class="cta" href="mailto:akilanvadivelan1@gmail.com?subject=Loopd%20beta%20invite">Ask for a beta invite</a>
+      <p class="facts">Free. iPhone with iOS 16 or later. For ages 13 and up.</p>
+    </div>
+
+    <figure class="map">
+      <svg viewBox="0 0 560 440" role="img" aria-labelledby="map-title map-desc">
+        <title id="map-title">A loop being claimed on a street map</title>
+        <desc id="map-desc">A route drives around 30 blocks of a street grid. The land inside is yellow and worth 469 points. Six of those blocks overlap a friend's cyan land and now belong to the driver.</desc>
+        <path class="street" d="M40 0V440 M80 0V440 M120 0V440 M200 0V440 M240 0V440 M280 0V440 M360 0V440 M400 0V440 M440 0V440 M520 0V440 M0 40H560 M0 80H560 M0 120H560 M0 200H560 M0 240H560 M0 280H560 M0 360H560 M0 400H560"/>
+        <path class="avenue" d="M160 0V440 M320 0V440 M480 0V440 M0 160H560 M0 320H560 M0 300L140 440"/>
+        <polygon id="friend-land" class="friend-land" points="360,200 520,200 520,400 280,400 280,320 360,320"/>
+        <polygon id="my-land" class="my-land" points="80,120 320,120 320,160 360,160 360,320 160,320 160,240 80,240"/>
+        <rect id="taken" class="taken" x="280" y="200" width="80" height="120"/>
+        <path id="route" class="route" pathLength="100" d="M80 160V120H320V160H360V320H160V240H80V184"/>
+        <circle class="start" cx="80" cy="160" r="7"/>
+        <path class="scale" d="M24 420V412H104V420"/>
+        <text class="scale-label" x="24" y="404">1/4 mile</text>
+      </svg>
+      <figcaption class="map-foot">
+        <p class="readout"><span class="num">0.47</span> square miles, <span class="num">469</span> points</p>
+        <p class="caption">An example loop of 30 blocks, an eighth of a mile each. Six of those blocks, 0.09 square miles, were a friend's land until you drove over them.</p>
+        <ul class="key">
+          <li><span class="sw sw-route"></span>Your route</li>
+          <li><span class="sw sw-you"></span>Your land</li>
+          <li><span class="sw sw-taken"></span>Taken from a friend</li>
+          <li><span class="sw sw-friend"></span>A friend's land</li>
+        </ul>
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="block" aria-labelledby="rules">
+    <h2 id="rules">The rules are short</h2>
+    <div>
+      <p><strong>Only new land scores.</strong> Drive the same loop twice and the second one is worth nothing. Loops smaller than about 0.02 square miles, which is 20 points, do not count.</p>
+      <p><strong>The overlap goes to the driver.</strong> When you end a drive, your route is closed with a straight line back to where it began. The land inside is yours, and anyone whose land you crossed loses exactly that shape.</p>
+      <p><strong>A server checks every drive.</strong> It looks at speed, jumps in the GPS signal and gaps in the route, so faking land does not work.</p>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="friends">
+    <h2 id="friends">Friends, state and nation</h2>
+    <div>
+      <p>Share an invite link or an eight character code. Friends see each other's land on a map, tap it to see whose it is, and compete on a friends board. There are also boards for your state and for the whole country.</p>
+      <p>Every row shows points, square miles and minutes driven.</p>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="safe">
+    <h2 id="safe">Built for the road, and for privacy</h2>
+    <div>
+      <p><strong>Hands free.</strong> Results are read aloud, so you never need to look at the screen. Set up before you drive, and never touch your phone while the car is moving.</p>
+      <p><strong>Only the shape is kept.</strong> Loopd saves the shape of the land you claim, not your raw GPS points.</p>
+      <p><strong>Your land is public to other players.</strong> It follows the roads you drive, so do not claim land near places you want kept private.</p>
+      <p><strong>You can leave any time.</strong> Delete your account, and everything stored about it, from inside the app. <a href="/privacy">Read the privacy policy</a>.</p>
+    </div>
+  </section>
 </main>
+
+<footer class="wrap foot">
+  <p>Loopd is made by Akilan Vadivelan. Questions: <a href="mailto:akilanvadivelan1@gmail.com">akilanvadivelan1@gmail.com</a></p>
+  <p><a href="/privacy">Privacy</a>. For ages 13 and up. Please do not use your phone while driving.</p>
+</footer>
 </body>
 </html>

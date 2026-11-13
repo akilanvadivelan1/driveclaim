@@ -1,0 +1,148 @@
+/* Loopd site. Night asphalt, road-paint yellow. Yellow means you.
+   No gradients, no glows, and no inline styles (the site's security rules block them). */
+
+:root {
+  --bg: #161513;
+  --card: #1c1a18;
+  --raised: #262421;
+  --line: rgba(239, 233, 222, 0.08);
+  --text: #efe9de;
+  --dim: #aaa398;
+  --muted: #8a847a;
+  --yellow: #ffc72c;
+  --yellow-lip: #b58a0a;
+  --on-yellow: #1a1500;
+  --cyan: #3dcbd9;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { color-scheme: dark; background: var(--bg); }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--text); text-underline-offset: 3px; }
+a:hover { color: var(--yellow); }
+a:focus-visible, .cta:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; border-radius: 4px; }
+
+.skip { position: absolute; left: -9999px; }
+.skip:focus { left: 16px; top: 12px; background: var(--raised); padding: 8px 12px; border-radius: 8px; z-index: 2; }
+
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+/* ---------- header and footer ---------- */
+
+.top { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+.brand img { width: 32px; height: 32px; border-radius: 7px; display: block; }
+.top nav a { color: var(--dim); font-size: 15px; text-decoration: none; }
+.top nav a:hover { color: var(--yellow); }
+
+.foot { padding: 40px 24px 56px; color: var(--muted); font-size: 14px; }
+.foot p { margin: 0 0 6px; }
+.foot a { color: var(--dim); }
+
+/* ---------- hero ---------- */
+
+.hero { display: grid; grid-template-columns: minmax(0, 9fr) minmax(0, 11fr); gap: 48px; align-items: center; padding: 40px 0 96px; }
+
+h1 { font-size: clamp(38px, 4.2vw, 54px); line-height: 1.04; letter-spacing: -0.025em; font-weight: 600; margin: 0 0 20px; }
+.lede { font-size: 19px; line-height: 1.5; color: var(--dim); margin: 0 0 32px; max-width: 34rem; }
+h1 span { display: block; }
+
+.cta {
+  display: inline-block;
+  background: var(--yellow);
+  color: var(--on-yellow);
+  font-size: 17px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 0 var(--yellow-lip);
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 120ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cta:hover { color: var(--on-yellow); }
+.cta:active { transform: translateY(4px); box-shadow: 0 0 0 var(--yellow-lip); }
+
+.facts { margin: 20px 0 0; color: var(--muted); font-size: 14px; }
+
+/* ---------- the map ---------- */
+
+.map { margin: 0; background: var(--card); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; }
+.map svg { display: block; width: 100%; height: auto; }
+
+.street { fill: none; stroke: var(--text); stroke-opacity: 0.07; stroke-width: 1; }
+.avenue { fill: none; stroke: var(--text); stroke-opacity: 0.13; stroke-width: 2; }
+.scale { fill: none; stroke: var(--dim); stroke-width: 2; }
+.scale-label { fill: var(--dim); font: 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+.friend-land { fill: var(--cyan); fill-opacity: 0.26; stroke: var(--cyan); stroke-opacity: 0.9; stroke-width: 2; stroke-linejoin: round; }
+.my-land { fill: var(--yellow); fill-opacity: 0.5; stroke: none; }
+.taken { fill: var(--yellow); fill-opacity: 0.22; stroke: none; }
+.route { fill: none; stroke: var(--text); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.start { fill: var(--text); stroke: var(--card); stroke-width: 3; }
+
+.map-foot { padding: 20px 24px 24px; border-top: 1px solid var(--line); }
+.readout { margin: 0 0 6px; font-size: 20px; }
+.num { font-family: var(--mono); font-weight: 700; color: var(--yellow); font-size: 28px; letter-spacing: -0.01em; }
+.caption { margin: 0 0 16px; color: var(--dim); font-size: 15px; }
+
+.key { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 14px; color: var(--dim); }
+.key li { display: flex; align-items: center; gap: 8px; }
+.sw { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+.sw-you { background: var(--yellow); opacity: 0.5; border: 1px solid var(--yellow); }
+.sw-taken { background: var(--yellow); opacity: 0.72; border: 1px solid var(--yellow); }
+.sw-friend { background: var(--cyan); opacity: 0.3; border: 1px solid var(--cyan); }
+.sw-route { height: 4px; border-radius: 2px; background: var(--text); width: 18px; }
+
+/* ---------- sections ---------- */
+
+.block { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 56px; padding: 0 0 88px; }
+h2 { font-size: 28px; line-height: 1.15; letter-spacing: -0.015em; font-weight: 600; margin: 0; }
+.block p { margin: 0 0 16px; color: var(--dim); max-width: 38rem; }
+.block p:last-child { margin-bottom: 0; }
+.block strong { color: var(--text); font-weight: 600; }
+
+/* ---------- privacy page text ---------- */
+
+.prose { padding-top: 24px; padding-bottom: 40px; }
+.prose > * { max-width: 680px; }
+.prose h1 { font-size: clamp(32px, 5vw, 44px); margin-bottom: 4px; }
+.prose h2 { font-size: 21px; margin: 40px 0 8px; }
+.prose p, .prose li { color: #d9d3c8; }
+.prose li { margin: 6px 0; }
+.prose .meta { color: var(--dim); margin: 0 0 24px; }
+.prose a { color: var(--yellow); }
+
+/* ---------- small screens ---------- */
+
+@media (max-width: 880px) {
+  .hero { grid-template-columns: minmax(0, 1fr); gap: 40px; padding: 16px 0 72px; }
+  .block { grid-template-columns: minmax(0, 1fr); gap: 16px; padding-bottom: 64px; }
+  .lede { font-size: 18px; }
+}
+
+@media (max-width: 480px) {
+  .readout { font-size: 17px; }
+  .num { font-size: 23px; }
+}
+
+/* ---------- motion: one thing, once, and only if the visitor allows it ---------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .route { stroke-dasharray: 100; stroke-dashoffset: 100; animation: draw 1.6s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards; }
+  .my-land { opacity: 0; animation: arrive 0.6s ease-out 1.6s forwards; }
+  .taken { opacity: 0; animation: arrive 0.6s ease-out 1.9s forwards; }
+  .start { opacity: 0; animation: arrive 0.3s ease-out 0.2s forwards; }
+}
+
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes arrive { to { opacity: 1; } }

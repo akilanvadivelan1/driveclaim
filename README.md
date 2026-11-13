@@ -71,6 +71,25 @@ For the server to remove the sign-in itself, its service account needs the Fireb
 
     gcloud projects add-iam-policy-binding loopd-e2ba1 --member=serviceAccount:792316187993-compute@developer.gserviceaccount.com --role=roles/firebaseauth.admin
 
+### The website
+
+The site lives in `Firebase/hosting` and is published to `https://loopd-e2ba1.web.app`. It has a home page, the privacy policy (`/privacy`) and a not-found page. It follows the same look as the app: night asphalt, with yellow meaning you.
+
+- **No gradients, glows, scripts or inline styles.** The site's security headers (in `Firebase/firebase.json`) block scripts and inline styles, so the checker below fails if one slips in.
+- **The example map tells the truth.** It shows a loop of 30 blocks (an eighth of a mile each), which is 0.47 square miles and 469 points, with 6 blocks taken from a friend. `scripts/check-site.py` works those numbers out from the drawing and from the server's real scoring rate, and fails if the page disagrees.
+- **Check it any time:** `python3 scripts/check-site.py`
+- **Publish it:**
+
+        bash scripts/add-logo.sh ~/Downloads/YOUR-LOGO-FILE   # also makes the site's logo, tab icon and home-screen icon
+        bash scripts/check-before-publish.sh
+        cd Firebase && npx -y firebase-tools@latest deploy --only hosting
+
+- **When your TestFlight public link exists,** swap the "Ask for a beta invite" button for it. Use your real link in place of the made-up one below:
+
+        sed -i '' 's#mailto:akilanvadivelan1@gmail.com?subject=Loopd%20beta%20invite#https://testflight.apple.com/join/YOUR_REAL_CODE#; s#Ask for a beta invite#Join the beta on TestFlight#' Firebase/hosting/index.html
+
+- **Preview on your Mac:** `cd Firebase/hosting && python3 -m http.server 8000`, then open `http://localhost:8000`. The privacy page is at `/privacy.html` there, because the local server does not have the clean-URL setting.
+
 ### Business model
 
 Loopd is free. There is no paywall, subscription or advertising. Paid-upfront apps get very few downloads, and this game needs friends to join. Extras such as cosmetics or stats could come later, but never points, land or privacy.

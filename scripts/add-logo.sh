@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Puts your logo into Loopd as the app icon and as the logo shown on the first screens.
+# Puts your logo into Loopd as the app icon, the logo on the first screens, and the website's logo and icons.
 #
 #   bash scripts/add-logo.sh ~/Downloads/loopd-logo.png
 #
@@ -70,7 +70,17 @@ for path, name in ((sys.argv[1], "icon-1024.png"), (sys.argv[2], "logo.png")):
         f.write("\n")
 PY
 
+# 4. The website uses small copies of the same logo: the header, the browser tab, and the
+#    icon iPhones use when someone adds the site to their home screen.
+SITE="$ROOT/Firebase/hosting"
+if [ -d "$SITE" ]; then
+  small() { sips -z "$1" "$1" "$TMP/icon.png" --out "$2" >/dev/null; }
+  small 192 "$SITE/logo.png"
+  small 48  "$SITE/favicon.png"
+  small 180 "$SITE/apple-touch-icon.png"
+fi
+
 echo ""
-echo "Done. The logo is installed as the app icon and as the logo on the first screens."
+echo "Done. The logo is installed as the app icon and as the logo on the first screens and on the website."
 echo "Next:  xcodegen generate && open Loopd.xcodeproj   then press Cmd + R."
 echo "If the old icon still shows, delete Loopd from the phone and run it again."

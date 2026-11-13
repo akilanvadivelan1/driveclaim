@@ -16,6 +16,10 @@ This is an early test version. Please tell us what is confusing, what breaks, an
 
 akilanvadivelan1@gmail.com
 
+### Marketing URL (optional)
+
+https://loopd-e2ba1.web.app
+
 ### What to Test
 
 - Create an account with your email, or play as a guest.
