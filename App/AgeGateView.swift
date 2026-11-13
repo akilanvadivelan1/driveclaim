@@ -20,9 +20,7 @@ struct AgeGateView: View {
             VStack(spacing: 28) {
                 Spacer()
 
-                Text("Loopd")
-                    .font(.system(size: 48, weight: .bold))
-                    .foregroundColor(Theme.accent)
+                LogoView()
 
                 VStack(spacing: 10) {
                     Text("Are you 13 or older?")

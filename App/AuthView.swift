@@ -59,9 +59,7 @@ struct AuthView: View {
 
     private var titleBlock: some View {
         VStack(spacing: 6) {
-            Text("Loopd")
-                .font(.system(size: 48, weight: .bold))
-                .foregroundStyle(Theme.accent)
+            LogoView(size: 80)
             Text("Drive a loop. Claim the land.")
                 .font(.subheadline)
                 .foregroundColor(Theme.textDim)

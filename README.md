@@ -34,6 +34,19 @@ Your progress (land, points, friends, name) belongs to your account, not to the 
 - You can reset a forgotten password from the sign-in screen.
 - Sign out is under Friends > Account. It is disabled while you are driving.
 
+### App icon and logo
+
+The app icon and the logo on the first screens come from one image. Until you add it, the app uses a plain "Loopd" name and the default icon, and it builds and runs as normal.
+
+To add it, on a Mac, with the logo saved as a file:
+
+    bash scripts/add-logo.sh ~/Downloads/loopd-logo.png
+    xcodegen generate && open Loopd.xcodeproj
+
+The logo must be square. The script turns it into the 1024 x 1024 PNG with no transparency that Apple requires, and puts it in `App/Assets.xcassets` twice: once as `AppIcon` and once as `LogoMark` for the screens. Do not round the corners yourself, because iOS does that.
+
+The accent yellow in `App/Theme.swift` (`Theme.accent`) is a bright road-paint yellow. The logo's yellow is a darker mustard. To make them match, replace the hex in `Theme.accent` and `Theme.mineUI` with the logo's exact color.
+
 ### Age check
 
 The first time the app opens, before sign-in, it asks "Are you 13 or older?". Both answers look the same, so neither one is pushed.
