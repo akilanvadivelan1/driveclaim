@@ -1,0 +1,50 @@
+# Publishes the Loopd website to GitHub Pages.
+#
+# Only the Firebase/hosting folder is published. Nothing else in this repository
+# (the app, the server code, the docs) becomes part of the website.
+#
+# It runs when something in Firebase/hosting changes on main, or by hand from the
+# Actions tab. It refuses to publish an unfinished site: no placeholders, the logo
+# files must be there, and the site's own checks must pass.
+#
+# One-time setup in GitHub: Settings > Pages > Build and deployment > Source: GitHub Actions.
+name: Publish website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Firebase/hosting/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deployment finish instead of cutting it off.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v7
+
+      - name: Check the site is finished
+        run: bash scripts/check-before-publish.sh
+
+      - name: Package the website folder
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: Firebase/hosting
+
+      - name: Publish
+        id: deployment
+        uses: actions/deploy-pages@v5
