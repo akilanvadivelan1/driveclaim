@@ -129,6 +129,16 @@ final class FirebaseService: ObservableObject {
         }
     }
 
+    /// Starts listening for sign-in again. Used by the Try again button when the first
+    /// attempt never answered, for example because the internet was down.
+    func restartAuthListener() {
+        if let handle = authHandle {
+            Auth.auth().removeStateDidChangeListener(handle)
+            authHandle = nil
+        }
+        start()
+    }
+
     private func apply(_ user: User) {
         uid = user.uid
         email = user.email

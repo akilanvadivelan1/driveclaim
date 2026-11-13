@@ -18,10 +18,7 @@ struct RootView: View {
             } else {
                 switch firebase.authState {
                 case .unknown:
-                    ZStack {
-                        Theme.background.ignoresSafeArea()
-                        ProgressView().tint(Theme.text)
-                    }
+                    ConnectingView()
                 case .signedOut:
                     AuthView(isGate: true)
                 case .needsVerification:
