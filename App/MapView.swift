@@ -8,10 +8,19 @@ enum MapFilter: Equatable {
     case mineAndFriends    // only you and your friends
 }
 
+/// What the player tapped on the map.
+struct TerritorySelection: Equatable, Identifiable {
+    enum Kind: Equatable { case mine, friend }
+    let id: String          // the claim
+    let ownerId: String
+    let kind: Kind
+    let squareMiles: Double
+    let colorIndex: Int     // which friend color, so the card can match the map
+}
+
 /// Apple Maps (MapKit). No API key or billing account needed.
-/// Your land is yellow and see-through, friends get their own colors,
-/// everyone else is soft gray, and your live trail is white.
-/// Pinch to zoom and drag to move around like any map.
+/// Your land is yellow and see-through, each friend gets a color, everyone else is grey,
+/// and your live trail is white. Pinch to zoom, drag to move, tap land to see whose it is.
 struct MapView: UIViewRepresentable {
     @EnvironmentObject var game: GameStore
     @EnvironmentObject var firebase: FirebaseService
@@ -19,8 +28,15 @@ struct MapView: UIViewRepresentable {
     var filter: MapFilter = .everyone
     /// While driving, keep the map centered on the car. Dragging the map turns this off.
     @Binding var follow: Bool
+    /// The land the player tapped, or nil.
+    @Binding var selection: TerritorySelection?
+    /// Change this number to fly back to the player's location.
+    var recenterTrigger = 0
     /// Zoom out to fit the land being shown (used by the leaderboard map).
     var fitClaims = false
+
+    /// How far across the map shows when it zooms to the player, in meters.
+    static let closeUpMeters: Double = 5000
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
@@ -36,12 +52,16 @@ struct MapView: UIViewRepresentable {
         config.pointOfInterestFilter = .excludingAll
         map.preferredConfiguration = config
 
-        // Start zoomed out over the continental U.S.
+        // Start zoomed out over the continental U.S. until the player's location is known.
         map.setRegion(
             MKCoordinateRegion(
                 center: CLLocationCoordinate2D(latitude: 39.5, longitude: -98.35),
                 span: MKCoordinateSpan(latitudeDelta: 35, longitudeDelta: 55)),
             animated: false)
+
+        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
+        tap.delegate = context.coordinator
+        map.addGestureRecognizer(tap)
         return map
     }
 
@@ -61,9 +81,11 @@ struct MapView: UIViewRepresentable {
             + "|" + firebase.friendIds.sorted().joined(separator: ",") + "|" + (firebase.uid ?? "")
         if key != c.claimsKey {
             c.claimsKey = key
+            c.hitTargets = []
             map.removeOverlays(map.overlays.filter { $0 is MKPolygon })
             for claim in visible {
                 let style = styleName(for: claim.ownerId)
+                c.hitTargets.append(Coordinator.HitTarget(claim: claim, style: style))
                 for rings in claim.polygons {
                     if let polygon = makePolygon(rings) {
                         polygon.title = style
@@ -89,7 +111,19 @@ struct MapView: UIViewRepresentable {
             }
         }
 
-        // 3. The live trail behind the car.
+        // 3. Fly back to the player when asked.
+        if c.lastRecenter != recenterTrigger {
+            c.lastRecenter = recenterTrigger
+            if let location = map.userLocation.location {
+                map.setRegion(
+                    MKCoordinateRegion(center: location.coordinate,
+                                       latitudinalMeters: Self.closeUpMeters,
+                                       longitudinalMeters: Self.closeUpMeters),
+                    animated: true)
+            }
+        }
+
+        // 4. The live trail behind the car.
         if game.trail.count != c.trailCount {
             c.trailCount = game.trail.count
             if let old = c.trailLine { map.removeOverlay(old) }
@@ -102,7 +136,7 @@ struct MapView: UIViewRepresentable {
             }
         }
 
-        // 4. Follow the car while driving.
+        // 5. Follow the car while driving.
         if follow, game.isDriving, let cur = game.current {
             let center = CLLocationCoordinate2D(latitude: cur.lat, longitude: cur.lon)
             if map.region.span.latitudeDelta > 0.05 {
@@ -117,7 +151,7 @@ struct MapView: UIViewRepresentable {
 
     // MARK: Helpers
 
-    /// "mine", "friend:2" or "other". The renderer reads this to pick a color.
+    /// "mine", "friend:2" or "other". The renderer and the tap handler read this.
     private func styleName(for ownerId: String) -> String {
         if ownerId == firebase.uid { return "mine" }
         if firebase.friendIds.contains(ownerId) {
@@ -140,13 +174,20 @@ struct MapView: UIViewRepresentable {
 
     // MARK: Coordinator
 
-    final class Coordinator: NSObject, MKMapViewDelegate {
+    final class Coordinator: NSObject, MKMapViewDelegate, UIGestureRecognizerDelegate {
+        struct HitTarget {
+            let claim: FirebaseService.RemoteClaim
+            let style: String
+        }
+
         var parent: MapView?
         var claimsKey = ""
+        var hitTargets: [HitTarget] = []
         var trailCount = -1
         var trailLine: MKPolyline?
         var fittedFilter: MapFilter?
         var didInitialCenter = false
+        var lastRecenter = 0
 
         /// If the user drags or pinches the map, stop following the car.
         func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
@@ -161,9 +202,42 @@ struct MapView: UIViewRepresentable {
             guard !didInitialCenter, parent?.fitClaims != true, let loc = userLocation.location else { return }
             didInitialCenter = true
             mapView.setRegion(
-                MKCoordinateRegion(center: loc.coordinate, latitudinalMeters: 8000, longitudinalMeters: 8000),
+                MKCoordinateRegion(center: loc.coordinate,
+                                   latitudinalMeters: MapView.closeUpMeters,
+                                   longitudinalMeters: MapView.closeUpMeters),
                 animated: false)
         }
+
+        // MARK: Taps
+
+        /// Lets this tap work alongside the map's own gestures (pan, pinch, double tap).
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                               shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
+
+        @objc func handleTap(_ gesture: UITapGestureRecognizer) {
+            guard gesture.state == .ended, let map = gesture.view as? MKMapView else { return }
+            let c = map.convert(gesture.location(in: map), toCoordinateFrom: map)
+            let tapped = Coord(lat: c.latitude, lon: c.longitude)
+
+            for target in hitTargets where target.claim.polygons.contains(where: { GeoMath.contains(rings: $0, point: tapped) }) {
+                if target.style == "mine" {
+                    parent?.selection = TerritorySelection(
+                        id: target.claim.id, ownerId: target.claim.ownerId, kind: .mine,
+                        squareMiles: target.claim.squareMiles, colorIndex: 0)
+                    return
+                }
+                if target.style.hasPrefix("friend:"), let index = Int(target.style.dropFirst(7)) {
+                    parent?.selection = TerritorySelection(
+                        id: target.claim.id, ownerId: target.claim.ownerId, kind: .friend,
+                        squareMiles: target.claim.squareMiles, colorIndex: index)
+                    return
+                }
+                break   // a stranger's land: nothing to show
+            }
+            parent?.selection = nil
+        }
+
+        // MARK: Drawing
 
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
             if let polygon = overlay as? MKPolygon {

@@ -87,6 +87,12 @@ final class FirebaseService: ObservableObject {
         var id: String { ownerId }
     }
 
+    /// What the territory card shows about a friend.
+    struct PlayerInfo {
+        let displayName: String?
+        let points: Int
+    }
+
     struct FriendResult {
         let friendId: String
         let displayName: String
@@ -316,6 +322,20 @@ final class FirebaseService: ObservableObject {
                 minutesDriven: Int(number(r["minutesDriven"])),
                 state: r["state"] as? String,
                 isMe: owner == uid)
+        }
+    }
+
+    /// A player's chosen name and current points. Players are readable by anyone signed in.
+    func playerInfo(for id: String) async -> PlayerInfo? {
+        guard isConfigured else { return nil }
+        do {
+            let snap = try await db.collection("players").document(id).getDocument()
+            let d = snap.data() ?? [:]
+            let squareMiles = max(0, (d["squareMiles"] as? NSNumber)?.doubleValue ?? 0)
+            return PlayerInfo(displayName: d["displayName"] as? String,
+                              points: Scoring.points(forSquareMiles: squareMiles))
+        } catch {
+            return nil
         }
     }
 

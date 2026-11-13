@@ -12,19 +12,28 @@ struct ContentView: View {
 
     @State private var sheet: Sheet?
     @State private var follow = true
+    @State private var selected: TerritorySelection?
+    @State private var recenter = 0
     @State private var showInviteAlert = false
 
     var body: some View {
         ZStack {
-            MapView(follow: $follow).ignoresSafeArea()
+            MapView(follow: $follow, selection: $selected, recenterTrigger: recenter)
+                .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 scoreboard
+                if let selected {
+                    TerritoryCard(selection: selected) { self.selected = nil }
+                        .padding(.horizontal, 12)
+                        .padding(.top, 8)
+                }
                 Spacer()
-                if game.isDriving && !follow { recenterButton }
+                recenterButton
                 bottomPanel
             }
         }
+        .onAppear { game.prepareLocation() }
         .background(Theme.background)
         .preferredColorScheme(.dark)
         .sheet(item: $sheet) { which in
@@ -95,7 +104,10 @@ struct ContentView: View {
     private var recenterButton: some View {
         HStack {
             Spacer()
-            IconButton(systemName: "location") { follow = true }
+            IconButton(systemName: "location") {
+                follow = game.isDriving
+                recenter += 1
+            }
         }
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
@@ -108,6 +120,7 @@ struct ContentView: View {
 
     private var bottomPanel: some View {
         VStack(spacing: 12) {
+            if game.locationDenied { locationOffBar }
             if let msg = game.statusMessage { statusBar(msg) }
 
             statRow
@@ -136,6 +149,24 @@ struct ContentView: View {
         .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Theme.hairline, lineWidth: 1))
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
+    }
+
+    /// Loopd cannot work without location, so say how to turn it back on.
+    private var locationOffBar: some View {
+        HStack(spacing: 12) {
+            Text("Location is off. Loopd needs it to zoom to you and track your drive.")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(Theme.danger)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button("Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            .buttonStyle(SmallButtonStyle(kind: .secondary))
+        }
+        .padding(12)
+        .background(Theme.raised, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private func statusBar(_ message: String) -> some View {

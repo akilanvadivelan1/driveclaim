@@ -34,6 +34,13 @@ Your progress (land, points, friends, name) belongs to your account, not to the 
 - You can reset a forgotten password from the sign-in screen.
 - Sign out is under Friends > Account. It is disabled while you are driving.
 
+### The map
+
+- **Opening screen:** Loopd asks for location as soon as the home screen shows, then zooms to you (about 3 miles across). The arrow button, bottom right, flies back to you any time, including after you have panned away.
+- **Colors:** your land is yellow, each friend gets their own color (cyan, orange, blue or lime), and everyone else is grey. The key on the leaderboard map shows this.
+- **Tap to see whose land it is:** tap any of your own or a friend's land, on the home screen or on the Friends map. A card shows the name, how much land is under your finger, and the friend's total points. Tapping a stranger's land shows nothing, so strangers' names are only ever shown on the leaderboard.
+- **If location is off:** a bar on the home screen says so, with a button to open Settings.
+
 ### App icon and logo
 
 The app icon and the logo on the first screens come from one image. Until you add it, the app uses a plain "Loopd" name and the default icon, and it builds and runs as normal.

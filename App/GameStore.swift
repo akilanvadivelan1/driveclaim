@@ -14,6 +14,8 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var isDriving = false
     @Published var statusMessage: String?
     @Published var statusIsError = false
+    /// True when location is switched off for Loopd, so the home screen can say so.
+    @Published var locationDenied = false
     /// Points from the drive that just finished, shown beside the score for a few seconds.
     @Published var lastGainPoints: Int?
     @Published var submitting = false
@@ -42,9 +44,29 @@ final class GameStore: NSObject, ObservableObject, CLLocationManagerDelegate {
         manager.showsBackgroundLocationIndicator = true
     }
 
+    /// Asks for location as soon as the home screen shows, so the map can zoom to the player
+    /// before the first drive. Safe to call every time. It only asks once.
+    func prepareLocation() {
+        locationDenied = Self.isDenied(manager.authorizationStatus)
+        if manager.authorizationStatus == .notDetermined {
+            manager.requestWhenInUseAuthorization()
+        }
+    }
+
+    private static func isDenied(_ status: CLAuthorizationStatus) -> Bool {
+        status == .denied || status == .restricted
+    }
+
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        locationDenied = Self.isDenied(manager.authorizationStatus)
+    }
+
     func start() {
-        manager.requestWhenInUseAuthorization()
-        manager.requestAlwaysAuthorization()
+        // Ask for "Always" only after "While Using" has been granted, because asking for
+        // both at once makes iOS ignore the second request.
+        if manager.authorizationStatus == .authorizedWhenInUse {
+            manager.requestAlwaysAuthorization()
+        }
         detector.reset()
         trail = []
         recorded = []

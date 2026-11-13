@@ -126,3 +126,50 @@ extension TerritoryCoreTests {
         XCTAssertEqual(Scoring.points(forSquareMiles: Scoring.minimumSquareMiles), 20)
     }
 }
+
+/// Which piece of land did the player tap?
+extension TerritoryCoreTests {
+    func testTapInsideAndOutsideASquare() {
+        let rings = GeoJSONGeometry.parsePolygons(serverPolygon)[0]
+        // The server square runs from lon -104.99 to -104.971178 and lat 39.74 to 39.754473.
+        XCTAssertTrue(GeoMath.contains(rings: rings, point: Coord(lat: 39.747, lon: -104.980)))
+        XCTAssertFalse(GeoMath.contains(rings: rings, point: Coord(lat: 39.760, lon: -104.980)))  // north of it
+        XCTAssertFalse(GeoMath.contains(rings: rings, point: Coord(lat: 39.747, lon: -104.960)))  // east of it
+        XCTAssertFalse(GeoMath.contains(rings: rings, point: Coord(lat: 39.747, lon: -105.000)))  // west of it
+        XCTAssertFalse(GeoMath.contains(rings: rings, point: Coord(lat: 39.730, lon: -104.980)))  // south of it
+    }
+
+    func testTapInsideAHoleDoesNotCount() {
+        let rings = GeoJSONGeometry.parsePolygons(polygonWithHole)[0]   // 4x4 square with a 1x1 hole at (1..2, 1..2)
+        XCTAssertTrue(GeoMath.contains(rings: rings, point: Coord(lat: 3.0, lon: 3.0)))     // solid part
+        XCTAssertFalse(GeoMath.contains(rings: rings, point: Coord(lat: 1.5, lon: 1.5)))    // inside the hole
+        XCTAssertFalse(GeoMath.contains(rings: rings, point: Coord(lat: 5.0, lon: 5.0)))    // outside everything
+    }
+
+    func testTapPicksTheRightPieceOfAMultiPolygon() {
+        let pieces = GeoJSONGeometry.parsePolygons(serverMultiPolygon)
+        XCTAssertEqual(pieces.count, 2)
+        let inFirst = Coord(lat: 39.747, lon: -104.980)
+        let inSecond = Coord(lat: 39.747, lon: -104.924)
+        let between = Coord(lat: 39.747, lon: -104.950)
+        XCTAssertTrue(pieces.contains { GeoMath.contains(rings: $0, point: inFirst) })
+        XCTAssertTrue(pieces.contains { GeoMath.contains(rings: $0, point: inSecond) })
+        XCTAssertFalse(pieces.contains { GeoMath.contains(rings: $0, point: between) })
+        XCTAssertTrue(GeoMath.contains(rings: pieces[0], point: inFirst))
+        XCTAssertFalse(GeoMath.contains(rings: pieces[1], point: inFirst))
+    }
+
+    func testTapOnDegenerateShapes() {
+        XCTAssertFalse(GeoMath.contains(rings: [], point: Coord(lat: 0, lon: 0)))
+        XCTAssertFalse(GeoMath.contains(rings: [[Coord(lat: 0, lon: 0), Coord(lat: 1, lon: 1)]], point: Coord(lat: 0.5, lon: 0.5)))
+    }
+
+    /// A concave "L" shape: the notch is outside even though it is inside the bounding box.
+    func testTapInTheNotchOfAConcaveShape() {
+        let l = [Coord(lat: 0, lon: 0), Coord(lat: 0, lon: 4), Coord(lat: 2, lon: 4),
+                 Coord(lat: 2, lon: 2), Coord(lat: 4, lon: 2), Coord(lat: 4, lon: 0)]
+        XCTAssertTrue(GeoMath.contains(rings: [l], point: Coord(lat: 1, lon: 3)))    // bottom arm
+        XCTAssertTrue(GeoMath.contains(rings: [l], point: Coord(lat: 3, lon: 1)))    // left arm
+        XCTAssertFalse(GeoMath.contains(rings: [l], point: Coord(lat: 3, lon: 3)))   // the notch
+    }
+}

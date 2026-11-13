@@ -18,6 +18,7 @@ struct LeaderboardView: View {
     @State private var loading = false
     @State private var error: String?
     @State private var showFriends = false
+    @State private var selection: TerritorySelection?
 
     private var mapFilter: MapFilter { section == .friends ? .mineAndFriends : .everyone }
 
@@ -61,6 +62,7 @@ struct LeaderboardView: View {
         }
         .preferredColorScheme(.dark)
         .task(id: loadKey) { await load() }
+        .onChange(of: section) { _ in selection = nil }
         .sheet(isPresented: $showFriends) { FriendsView() }
     }
 
@@ -108,9 +110,15 @@ struct LeaderboardView: View {
 
     private var mapContent: some View {
         ZStack(alignment: .bottomLeading) {
-            MapView(filter: mapFilter, follow: .constant(false), fitClaims: true)
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            MapView(filter: mapFilter, follow: .constant(false), selection: $selection, fitClaims: true)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             LegendView(filter: mapFilter).padding(12)
+        }
+        .overlay(alignment: .top) {
+            if let selection {
+                TerritoryCard(selection: selection) { self.selection = nil }
+                    .padding(10)
+            }
         }
         .frame(maxHeight: .infinity)
     }

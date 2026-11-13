@@ -154,7 +154,7 @@ struct LegendView: View {
     var body: some View {
         HStack(spacing: 14) {
             dot(Color(Theme.mineUI), "You")
-            dot(Color(Theme.friendPaletteUI[0]), "Friends")
+            friendsKey
             if filter == .everyone { dot(Color(Theme.otherUI), "Everyone else") }
         }
         .font(.system(size: 12, weight: .medium))
@@ -162,6 +162,18 @@ struct LegendView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    /// Friends each get their own color, so the key shows a few of them.
+    private var friendsKey: some View {
+        HStack(spacing: 6) {
+            HStack(spacing: 2) {
+                ForEach(0..<3, id: \.self) { i in
+                    Circle().fill(Color(Theme.friendPaletteUI[i])).frame(width: 9, height: 9)
+                }
+            }
+            Text("Friends")
+        }
     }
 
     private func dot(_ color: Color, _ label: String) -> some View {
